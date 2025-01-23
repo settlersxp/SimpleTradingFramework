@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Prop Firm</title>
+    <style>
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 300px; padding: 5px; }
+        .button { 
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        async function submitForm(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const data = {};
+            formData.forEach((value, key) => data[key] = value);
+            
+            try {
+                const response = await fetch(`/prop_firms/{{ prop_firm.id }}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Prop firm updated successfully!');
+                    window.location.href = '/view/prop_firms';
+                } else {
+                    alert(`Error: ${result.message}`);
+                }
+            } catch (error) {
+                alert('Error updating prop firm');
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Edit Prop Firm</h1>
+    <form onsubmit="submitForm(event)">
+        <div class="form-group">
+            <label>Name:</label>
+            <input type="text" name="name" value="{{ prop_firm.name }}" required>
+        </div>
+        <div class="form-group">
+            <label>Full Balance:</label>
+            <input type="number" name="full_balance" value="{{ prop_firm.full_balance }}" required>
+        </div>
+        <div class="form-group">
+            <label>Username:</label>
+            <input type="text" name="username" value="{{ prop_firm.username }}" required>
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" name="password" value="{{ prop_firm.password }}" required>
+        </div>
+        <div class="form-group">
+            <label>IP Address:</label>
+            <input type="text" name="ip_address" value="{{ prop_firm.ip_address }}" required>
+        </div>
+        <div class="form-group">
+            <label>Port:</label>
+            <input type="number" name="port" value="{{ prop_firm.port }}" required>
+        </div>
+        <div class="form-group">
+            <label>Platform Type:</label>
+            <input type="text" name="platform_type" value="{{ prop_firm.platform_type }}" required>
+        </div>
+        <button type="submit" class="button">Update Prop Firm</button>
+        <a href="/view/prop_firms" class="button" style="text-decoration: none">Cancel</a>
+    </form>
+</body>
+</html> 

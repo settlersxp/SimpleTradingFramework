@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trades</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        th { background-color: #4CAF50; color: white; }
+    </style>
+    <script>
+        function refreshPage() {
+            location.reload();
+        }
+        setInterval(refreshPage, 5000);
+    </script>
+</head>
+<body>
+    <h1>Trades</h1>
+    <a href="/view/prop_firms">View Prop Firms</a>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Strategy</th>
+            <th>Order Type</th>
+            <th>Contracts</th>
+            <th>Ticker</th>
+            <th>Position Size</th>
+            <th>Created At</th>
+            <th>Prop Firm</th>
+        </tr>
+        {% for trade, prop_firm in trades_with_firms %}
+        <tr>
+            <td>{{ trade.id }}</td>
+            <td>{{ trade.strategy }}</td>
+            <td>{{ trade.order_type }}</td>
+            <td>{{ trade.contracts }}</td>
+            <td>{{ trade.ticker }}</td>
+            <td>${{ "%.2f"|format(trade.position_size) }}</td>
+            <td>{{ trade.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td>{{ prop_firm.name }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html> 

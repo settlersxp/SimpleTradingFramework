@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prop Firms</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        th { background-color: #4CAF50; color: white; }
+        .button { 
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+            border-radius: 3px;
+        }
+    </style>
+    <script>
+        function refreshPage() {
+            location.reload();
+        }
+        setInterval(refreshPage, 5000);
+    </script>
+</head>
+<body>
+    <h1>Prop Firms</h1>
+    <a href="/view/trades">View Trades</a>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Full Balance</th>
+            <th>Available Balance</th>
+            <th>Downdraft %</th>
+            <th>Created At</th>
+            <th>Username</th>
+            <th>IP Address</th>
+            <th>Port</th>
+            <th>Platform</th>
+            <th>Actions</th>
+        </tr>
+        {% for firm in prop_firms %}
+        <tr>
+            <td>{{ firm.id }}</td>
+            <td>{{ firm.name }}</td>
+            <td>${{ "%.2f"|format(firm.full_balance) }}</td>
+            <td>${{ "%.2f"|format(firm.available_balance) }}</td>
+            <td>{{ "%.2f"|format(firm.dowdown_percentage) }}%</td>
+            <td>{{ firm.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td>{{ firm.username }}</td>
+            <td>{{ firm.ip_address }}</td>
+            <td>{{ firm.port }}</td>
+            <td>{{ firm.platform_type }}</td>
+            <td>
+                <a href="/view/prop_firms/{{ firm.id }}/edit" class="button">Edit</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html> 

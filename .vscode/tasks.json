@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "createVenv",
+            "type": "shell",
+            "command": "python -m venv venv && ${command:python.setInterpreter}",
+            "windows": {
+                "command": "python -m venv venv; ${command:python.setInterpreter}"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "runMigrations",
+            "type": "shell",
+            "command": "python -c \"from app import app, db; app.app_context().push(); db.create_all()\"",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        }
+    ]
+} 

@@ -1,0 +1,57 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Setup Environment",
+            "type": "python",
+            "request": "launch",
+            "module": "pip",
+            "args": [
+                "install",
+                "-r",
+                "requirements.txt"
+            ],
+            "console": "integratedTerminal",
+            "preLaunchTask": "createVenv",
+            "postDebugTask": "runMigrations"
+        },
+        {
+            "name": "Flask Server (Gunicorn)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "gunicorn",
+            "args": [
+                "--config",
+                "gunicorn_config.py",
+                "app:app"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "FLASK_ENV": "development",
+                "FLASK_DEBUG": "1"
+            }
+        },
+        {
+            "name": "Flask Server (Debug)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/app.py",
+            "console": "integratedTerminal",
+            "env": {
+                "FLASK_ENV": "development",
+                "FLASK_DEBUG": "1"
+            }
+        },
+        {
+            "name": "Python: Run Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "-v",
+                "test_app.py"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+} 
