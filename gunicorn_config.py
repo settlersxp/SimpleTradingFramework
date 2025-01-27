@@ -5,7 +5,7 @@ import multiprocessing
 bind = "0.0.0.0:3200"
 backlog = 2048
 
-# Worker processes up to a maximum of 6
+# Worker processes up to a maximum of 2
 workers = multiprocessing.cpu_count() * 2 + 1
 if workers > 2:
     workers = 2

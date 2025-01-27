@@ -55,7 +55,7 @@ def get_saved_hash():
 
 def run_setup_scripts():
     """Run setup_env.py and setup_db.py"""
-    scripts = ['setup_env.py', 'setup_db.py']
+    scripts = ['setup_env.py', 'setup_db.py', "run_server.py"]
     
     for script in scripts:
         script_path = os.path.join(FOLDER_PATH, script)

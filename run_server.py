@@ -9,22 +9,38 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('setup_db.log'),
+        logging.FileHandler('run_server.log'),
         logging.StreamHandler()
     ]
 )
 
 def run_command(command):
     try:
-        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        if result.stdout:
-            logging.info(result.stdout)
-        if result.stderr:
-            logging.warning(result.stderr)
-        return True
-    except subprocess.CalledProcessError as e:
+        # Use subprocess.Popen to keep the server running
+        process = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        
+        # Stream the output in real-time
+        while True:
+            output = process.stdout.readline()
+            if output:
+                logging.info(output.strip())
+            error = process.stderr.readline()
+            if error:
+                logging.error(error.strip())
+            
+            # Check if process has ended
+            if output == '' and error == '' and process.poll() is not None:
+                break
+            
+        return process.poll() == 0
+    except Exception as e:
         logging.error(f"Command failed: {e}")
-        logging.error(f"Output: {e.output}")
         return False
 
 def main():
@@ -48,20 +64,17 @@ def main():
         activate_cmd = f"source {venv_path}/bin/activate"
         python_cmd = f"{venv_path}/bin/python"
     
-    # Construct the database setup command
-    db_setup_cmd = '-c "from run import app, db; app.app_context().push(); db.create_all()"'
-    
-    # Combine commands
+    # Combine commands to run Flask app
     if is_windows:
-        full_command = f"{activate_cmd} && {python_cmd} {db_setup_cmd}"
+        full_command = f"{activate_cmd} && {python_cmd} run.py"
     else:
-        full_command = f"{activate_cmd} && {python_cmd} {db_setup_cmd}"
+        full_command = f"{activate_cmd} && {python_cmd} run.py"
     
-    logging.info("Setting up database...")
+    logging.info("Starting Flask server...")
     if run_command(full_command):
-        logging.info("Database setup completed successfully!")
+        logging.info("Server stopped successfully")
     else:
-        logging.error("Database setup failed!")
+        logging.error("Server failed to start or crashed!")
         sys.exit(1)
 
 if __name__ == "__main__":
