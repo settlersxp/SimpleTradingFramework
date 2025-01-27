@@ -1,0 +1,8 @@
+*.log
+venv/
+
+# all the _pycache_ folders from all the folders
+**/__pycache__/
+
+# all the .pyc files from all the folders
+**/*.pyc
