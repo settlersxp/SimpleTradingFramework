@@ -23,7 +23,7 @@
             "args": [
                 "--config",
                 "gunicorn_config.py",
-                "app:app"
+                "run:app"
             ],
             "console": "integratedTerminal",
             "env": {
@@ -35,7 +35,7 @@
             "name": "Flask Server (Debug)",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/app.py",
+            "program": "${workspaceFolder}/run.py",
             "console": "integratedTerminal",
             "env": {
                 "FLASK_ENV": "development",

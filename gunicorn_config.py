@@ -7,8 +7,8 @@ backlog = 2048
 
 # Worker processes up to a maximum of 6
 workers = multiprocessing.cpu_count() * 2 + 1
-if workers > 6:
-    workers = 6
+if workers > 2:
+    workers = 2
 worker_class = 'sync'
 worker_connections = 1000
 timeout = 30

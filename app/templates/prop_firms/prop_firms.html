@@ -24,7 +24,7 @@
 </head>
 <body>
     <h1>Prop Firms</h1>
-    <a href="/view/trades">View Trades</a>
+    <a href="{{ url_for('trades.view_trades') }}">View Trades</a>
     <table>
         <tr>
             <th>ID</th>
@@ -52,7 +52,7 @@
             <td>{{ firm.port }}</td>
             <td>{{ firm.platform_type }}</td>
             <td>
-                <a href="/view/prop_firms/{{ firm.id }}/edit" class="button">Edit</a>
+                <a href="{{ url_for('prop_firms.edit_prop_firm', prop_firm_id=firm.id) }}" class="button">Edit</a>
             </td>
         </tr>
         {% endfor %}

@@ -1,5 +1,6 @@
 from app import app, db
-from models import PropFirm, Trade
+from app.models.prop_firm import PropFirm
+
 
 def reset_database():
     with app.app_context():
