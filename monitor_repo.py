@@ -21,7 +21,7 @@ REPO_URL = "git@github.com:settlersxp/SimpleTradingFramework.git"
 REPO_PATH = "SimpleTradingFramework"
 CHECK_INTERVAL = 300  # 5 minutes in seconds
 
-def kill_flask_app():
+def kill_server_app():
     """Kill the Flask application process"""
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
@@ -61,17 +61,15 @@ def check_for_updates():
         # Get the hash of the remote master branch
         remote_hash = origin.refs.master.commit.hexsha
         
-        if current_hash != remote_hash:
-            logging.info("Updates found in repository")
+        if current_hash != remote_hash:            
+            # Kill the Server app
+            if kill_server_app():
+                logging.info("Server app terminated successfully")
+            else:
+                logging.warning("Server app process not found")
             
             # Pull changes
             origin.pull()
-            
-            # Kill the Flask app
-            if kill_flask_app():
-                logging.info("Flask app terminated successfully")
-            else:
-                logging.warning("Flask app process not found")
             
             return True
         
