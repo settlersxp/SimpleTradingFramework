@@ -53,9 +53,8 @@ def get_saved_hash():
     except FileNotFoundError:
         return None
 
-def run_setup_scripts():
-    """Run setup_env.py and setup_db.py"""
-    scripts = ['setup_env.py', 'setup_db.py', "run_server.py"]
+def run_setup_scripts(scripts):
+    """Run setup_env.py, setup_db.py and run_server.py"""
     
     for script in scripts:
         script_path = os.path.join(FOLDER_PATH, script)
@@ -108,13 +107,22 @@ def main():
             # If this is the first time we're seeing the folder
             if saved_hash is None:
                 logging.info("Folder created for the first time")
-                run_setup_scripts()
+                run_setup_scripts(scripts=[
+                    'setup_env.py',
+                    f'{FOLDER_PATH}/setup_env.py',
+                    f'{FOLDER_PATH}/setup_db.py',
+                    f'{FOLDER_PATH}/run_server.py'
+                ])
                 save_hash(current_hash)
                 
             # If the folder has been modified
             elif current_hash != saved_hash:
                 logging.info("Folder contents have changed")
-                run_setup_scripts()
+                run_setup_scripts(scripts=[
+                    f'{FOLDER_PATH}/setup_env.py',
+                    f'{FOLDER_PATH}/setup_db.py',
+                    f'{FOLDER_PATH}/run_server.py'
+                ])
                 save_hash(current_hash)
             
             # Wait for next check
