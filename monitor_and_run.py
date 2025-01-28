@@ -3,11 +3,9 @@ import time
 import requests
 from deployment_utils import (
     register_logger,
-    get_folder_hash,
     get_venv_path,
     run_command_as_subprocess_with_stream,
     kill_python_process,
-    CLONED_PROJECT_PATH
 )
 
 CHECK_INTERVAL = 5  # seconds
