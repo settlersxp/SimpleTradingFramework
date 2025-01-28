@@ -1,18 +1,10 @@
-import os
 import subprocess
-import platform
 import sys
 import logging
+from deployment_utils import register_logger, is_windows, get_venv_path
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('setup_db.log'),
-        logging.StreamHandler()
-    ]
-)
+logger = register_logger('setup_db')
 
 def run_command(command):
     try:
@@ -27,26 +19,8 @@ def run_command(command):
         logging.error(f"Output: {e.output}")
         return False
 
-def main():
-    # Determine the operating system
-    is_windows = platform.system().lower() == "windows"
-    
-    # Set paths
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    venv_path = os.path.join(base_path, "venv")
-    
-    # Check if virtual environment exists
-    if not os.path.exists(venv_path):
-        logging.error(f"Virtual environment not found at {venv_path}")
-        sys.exit(1)
-    
-    # Construct the activation command based on OS
-    if is_windows:
-        activate_cmd = f"{venv_path}\\Scripts\\activate"
-        python_cmd = f"{venv_path}\\Scripts\\python"
-    else:
-        activate_cmd = f"source {venv_path}/bin/activate"
-        python_cmd = f"{venv_path}/bin/python"
+def main():    
+    activate_cmd, python_cmd = get_venv_path(logger)
     
     # Construct the database setup command
     db_setup_cmd = '-c "from run import app, db; app.app_context().push(); db.create_all()"'
@@ -64,5 +38,6 @@ def main():
         logging.error("Database setup failed!")
         sys.exit(1)
 
+
 if __name__ == "__main__":
-    main() 
+    main()

@@ -1,7 +1,5 @@
 import os
 
-from sqlalchemy.sql.sqltypes import TIME_TIMEZONE
-
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 

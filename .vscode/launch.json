@@ -2,6 +2,26 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Monitor app and run",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "monitor_and_run",
+            "args": [
+                "run"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Monitor folder and run",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "monitor_folder",
+            "args": [
+                "run"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Setup Environment",
             "type": "python",
             "request": "launch",
