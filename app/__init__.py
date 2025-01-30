@@ -11,7 +11,7 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     db.init_app(app)
-    migrate.init_app(app, db)
+    # migrate.init_app(app, db)
 
     # Register blueprints
     from app.routes.prop_firms import bp as prop_firms_bp

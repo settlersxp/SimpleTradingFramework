@@ -1,9 +1,9 @@
 from app import create_app, db
 from config import DevelopmentConfig
 from flask import jsonify
-from flask_migrate import upgrade
 import os
 import signal
+from flask_migrate import upgrade
 import logging
 
 PID = os.getpid()
@@ -27,6 +27,7 @@ class FlaskApp:
                     logging.warning("No migrations found. Created tables directly.")
         except Exception as e:
             logging.error(f"Error initializing database: {e}")
+            pass
 
         # Register routes
         self.register_routes()
