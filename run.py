@@ -42,6 +42,11 @@ class FlaskApp:
             # redirect to trades
             return redirect(url_for('trades'))
 
+        @self.app.route('/receiveMessage', methods=['POST'])
+        def receive_message():
+            # redirect to trades
+            return redirect(url_for('trades'))
+
         @self.app.route('/health', methods=['GET'])
         def health():
             return jsonify({"status": "healthy"})
