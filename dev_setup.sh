@@ -10,6 +10,3 @@ source venv/bin/activate
 
 # Install requirements
 pip install -r requirements.txt
-
-# Start Gunicorn with auto-reload
-gunicorn --config gunicorn_config.py app:app 
