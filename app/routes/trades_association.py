@@ -6,6 +6,7 @@ from app import db
 
 bp = Blueprint('trades_association', __name__)
 
+
 @staticmethod
 def add_trade_associations(mt_string):
     trade = Trade.from_mt_string(mt_string)

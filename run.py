@@ -1,6 +1,6 @@
 from app import create_app, db
 from config import DevelopmentConfig
-from flask import jsonify
+from flask import jsonify, redirect, url_for
 import os
 import signal
 from flask_migrate import upgrade
@@ -36,6 +36,11 @@ class FlaskApp:
         @self.app.route('/', methods=['GET'])
         def hello():
             return jsonify({"message": "Hello, World!"})
+
+        @self.app.route('/open_positions', methods=['POST'])
+        def open_positions():
+            # redirect to trades
+            return redirect(url_for('trades'))
 
         @self.app.route('/health', methods=['GET'])
         def health():
