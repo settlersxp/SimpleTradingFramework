@@ -1,0 +1,6 @@
+POST http://localhost:3200/receiveMessage HTTP/1.1
+content-type: application/json
+
+{
+    "strategy":"Heiken-Ashi CE LSMA [v5.1]", "order":"sell", "contracts":149.949, "ticker":"RUNEUSDT.P", "position_size":-149.949
+}

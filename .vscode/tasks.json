@@ -16,11 +16,17 @@
         {
             "label": "runMigrations",
             "type": "shell",
-            "command": "python -c \"from app import app, db; app.app_context().push(); db.create_all()\"",
+            "command": "flask db upgrade",
+            "options": {
+                "env": {
+                    "FLASK_APP": "run.py"
+                }
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "new"
-            }
+            },
+            "dependsOn": ["createVenv"]
         }
     ]
 } 

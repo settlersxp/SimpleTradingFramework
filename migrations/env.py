@@ -94,4 +94,10 @@ def run_migrations_online():
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_migrations_online()
+    try:
+        with current_app.app_context():
+            logging.info(f"Attempting to connect to database: {current_app.config['SQLALCHEMY_DATABASE_URI']}")
+            run_migrations_online()
+    except Exception as e:
+        logging.error(f"Error connecting to database: {e}")
+        raise

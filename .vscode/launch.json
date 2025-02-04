@@ -43,7 +43,7 @@
             "args": [
                 "--config",
                 "gunicorn_config.py",
-                "run:app"
+                "run:flask_app"
             ],
             "console": "integratedTerminal",
             "env": {
