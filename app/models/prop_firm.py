@@ -1,6 +1,10 @@
 from app import db
 from datetime import datetime
 from app.models.trade import Trade
+import importlib
+from typing import Optional
+from app.trade_actions.trade_interface import TradingInterface
+import logging
 
 
 class PropFirm(db.Model):
@@ -21,6 +25,36 @@ class PropFirm(db.Model):
 
     # One to many relationship with trades in a different association table
     trades = db.relationship('Trade', secondary='prop_firm_trades', backref='prop_firm', lazy=True)
+
+    _trading_instance: Optional[TradingInterface] = None
+    
+    @property
+    def trading(self) -> Optional[TradingInterface]:
+        """Get or create trading instance based on platform_type"""
+        if not self._trading_instance and self.platform_type:
+            try:
+                # Convert platform type to module name (e.g., 'MT5' -> 'mt5_trading')
+                module_name = f"{self.platform_type.lower()}_trading"
+                # Import the module
+                module = importlib.import_module(f"app.trade_actions.{module_name}")
+                # Get the class (assumes class name is platform type + 'Trading')
+                class_name = f"{self.platform_type.upper()}Trading"
+                trading_class = getattr(module, class_name)
+                # Create instance
+                self._trading_instance = trading_class()
+                
+                # Try to connect if we have credentials
+                if all([self.username, self.password, self.ip_address, self.port]):
+                    self._trading_instance.connect({
+                        'username': self.username,
+                        'password': self.password,
+                        'server': f"{self.ip_address}:{self.port}"
+                    })
+            except Exception as e:
+                logging.error(f"Error creating trading instance: {e}")
+                return None
+                
+        return self._trading_instance
 
     # when a prop firm is created, the available balance should be set to the full balance
     def set_available_balance_to_full_balance(self):

@@ -16,6 +16,7 @@ def add_trade_associations(mt_string):
     # Add trade to all prop firms
     prop_firms = db.session.query(PropFirm).all()
     for prop_firm in prop_firms:
+        prop_firm.trading.place_trade(trade)
         prop_firm.trades.append(trade)
         prop_firm.update_available_balance(trade)    
     db.session.commit()

@@ -20,6 +20,7 @@ def create_and_get_prop_firms():
     elif request.method == 'POST':
         # create a new prop firm
         data = request.get_json()
+        data['platform_type'] = 'MT5'
         prop_firm = PropFirm(**data)
         prop_firm.set_available_balance_to_full_balance()
         db.session.add(prop_firm)
