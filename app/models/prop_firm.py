@@ -2,7 +2,7 @@ from app import db
 from datetime import datetime
 from app.models.trade import Trade
 import importlib
-from typing import Optional
+from typing import Optional, ClassVar
 from app.trade_actions.trade_interface import TradingInterface
 import logging
 
@@ -26,7 +26,7 @@ class PropFirm(db.Model):
     # One to many relationship with trades in a different association table
     trades = db.relationship('Trade', secondary='prop_firm_trades', backref='prop_firm', lazy=True)
 
-    _trading_instance: Optional[TradingInterface] = None
+    _trading_instance: ClassVar[Optional[TradingInterface]] = None
     
     @property
     def trading(self) -> Optional[TradingInterface]:
