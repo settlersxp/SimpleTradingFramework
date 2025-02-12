@@ -2,7 +2,7 @@
 import multiprocessing
 
 # Server socket
-bind = "0.0.0.0:3200"
+bind = "0.0.0.0:3100"
 backlog = 2048
 
 # Worker processes up to a maximum of 2

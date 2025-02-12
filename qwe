@@ -1,4 +1,4 @@
-POST http://localhost:3200/receiveMessage HTTP/1.1
+POST http://localhost:3100/receiveMessage HTTP/1.1
 content-type: application/json
 
 {

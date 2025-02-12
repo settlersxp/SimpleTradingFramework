@@ -206,7 +206,7 @@ class FlaskApp:
             return "OK", 200
     
     def run(self):
-        self.app.run(host='0.0.0.0', port=3200, use_reloader=False, threaded=True)
+        self.app.run(host='0.0.0.0', port=3100, use_reloader=False, threaded=True)
 
 
 # Create a single Flask application instance

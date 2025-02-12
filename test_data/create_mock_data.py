@@ -1,7 +1,7 @@
 import requests
 from time import sleep
 
-BASE_URL = "http://localhost:3200"
+BASE_URL = "http://localhost:3100"
 
 def create_mock_data():
     # Create prop firms
