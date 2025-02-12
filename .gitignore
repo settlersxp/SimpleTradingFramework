@@ -9,3 +9,5 @@ venv/
 # all the .pyc files from all the folders
 **/*.pyc
 SimpleTradingFramework/
+
+*.db

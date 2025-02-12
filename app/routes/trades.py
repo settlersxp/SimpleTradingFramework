@@ -25,11 +25,17 @@ def trades():
         })
     elif request.method == 'POST':
         mt_string = request.get_data(as_text=True)
-        trade = add_trade_associations(mt_string)
-        return jsonify({
-            "status": "success",
-            "trade_id": trade.id
-        })
+        try:
+            trade = add_trade_associations(mt_string)
+            return jsonify({
+                "status": "success",
+                "trade_id": trade.id
+            })
+        except Exception as e:
+            return jsonify({
+                "status": "error",
+                "message": str(e)
+            }), 400
 
 
 @bp.route('/view')
