@@ -32,27 +32,23 @@ class PropFirm(db.Model):
     def trading(self) -> Optional[TradingInterface]:
         """Get or create trading instance based on platform_type"""
         if not self._trading_instance and self.platform_type:
-            try:
-                # Convert platform type to module name (e.g., 'MT5' -> 'mt5_trading')
-                module_name = f"{self.platform_type.lower()}_trading"
-                # Import the module
-                module = importlib.import_module(f"app.trade_actions.{module_name}")
-                # Get the class (assumes class name is platform type + 'Trading')
-                class_name = f"{self.platform_type.upper()}Trading"
-                trading_class = getattr(module, class_name)
-                # Create instance
-                self._trading_instance = trading_class()
-                
-                # Try to connect if we have credentials
-                if all([self.username, self.password, self.ip_address, self.port]):
-                    self._trading_instance.connect({
-                        'username': self.username,
-                        'password': self.password,
-                        'server': f"{self.ip_address}:{self.port}"
-                    })
-            except Exception as e:
-                logging.error(f"Error creating trading instance: {e}")
-                return None
+            # Convert platform type to module name (e.g., 'MT5' -> 'mt5_trading')
+            module_name = f"{self.platform_type.lower()}_trading"
+            # Import the module
+            module = importlib.import_module(f"app.trade_actions.{module_name}")
+            # Get the class (assumes class name is platform type + 'Trading')
+            class_name = f"{self.platform_type.upper()}Trading"
+            trading_class = getattr(module, class_name)
+            # Create instance
+            self._trading_instance = trading_class()
+            
+            # Try to connect if we have credentials
+            if all([self.username, self.password, self.ip_address, self.port]):
+                self._trading_instance.connect({
+                    'username': self.username,
+                    'password': self.password,
+                    'server': f"{self.ip_address}:{self.port}"
+                })
                 
         return self._trading_instance
 

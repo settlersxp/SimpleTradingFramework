@@ -4,7 +4,6 @@ import time
 from app import create_app, db
 from app.models.prop_firm import PropFirm
 from app.models.trade import Trade
-from app.models.trade_association import TradeAssociation, prop_firm_trades
 from config import TestingConfig
 
 
@@ -25,13 +24,13 @@ class TestFlaskApp(unittest.TestCase):
         db.session.commit()
             
         # add two prop firms
-        response = self.client.post('/prop_firms', json={
+        response = self.client.post('/prop_firms/', json={
             'name': 'Test Prop Firm', 
             'full_balance': 100000})
         data = response.get_json()
         self.prop_firm_id = data['prop_firm_id']
 
-        response = self.client.post('/prop_firms', json={
+        response = self.client.post('/prop_firms/', json={
             'name': 'Test Prop Firm 2', 
             'full_balance': 100000
             })
@@ -39,11 +38,11 @@ class TestFlaskApp(unittest.TestCase):
         self.prop_firm_id_2 = data['prop_firm_id']
 
         # add two trades
-        response = self.client.post('/trades', data=self.HARDCODED_TRADE_MSG)   
+        response = self.client.post('/trades/', data=self.HARDCODED_TRADE_MSG)   
         data = response.get_json()
         self.btc_trade_id = data['trade_id']
 
-        response = self.client.post('/trades', data=self.HARDCODED_TRADE_MSG)
+        response = self.client.post('/trades/', data=self.HARDCODED_TRADE_MSG)
         data = response.get_json()
         self.rune_trade_id = data['trade_id']
 
@@ -86,17 +85,17 @@ class TestFlaskApp(unittest.TestCase):
 
     def test_get_trades(self):
         # initial number of trades
-        response = self.client.get('/trades')
+        response = self.client.get('/trades/')
         initial_trades_data = response.get_json()
         initial_trade_count = len(initial_trades_data['trades'])
 
         # First add a trade
-        trade_response = self.client.post('/trades', data=self.HARDCODED_TRADE_MSG)
+        trade_response = self.client.post('/trades/', data=self.HARDCODED_TRADE_MSG)
         trade_data = trade_response.get_json()
         local_trade_id = trade_data['trade_id']
         
         # Get trades
-        final_trades_response = self.client.get('/trades')
+        final_trades_response = self.client.get('/trades/')
         final_trades_data = final_trades_response.get_json()
         
         self.assertEqual(final_trades_response.status_code, 200)
@@ -109,7 +108,7 @@ class TestFlaskApp(unittest.TestCase):
 
     def test_get_prop_firms(self):
         # initial number of prop firms
-        response = self.client.get('/prop_firms')
+        response = self.client.get('/prop_firms/')
         data = response.get_json()
         initial_prop_firm_count = len(data)
 
@@ -119,7 +118,7 @@ class TestFlaskApp(unittest.TestCase):
         response = self.client.post('/prop_firms', json={'name': prop_firm_name, 'full_balance': prop_initial_full_balance})
         
         # final number of prop firms
-        response = self.client.get('/prop_firms')
+        response = self.client.get('/prop_firms/')
         data = response.get_json()
         final_prop_firm_count = len(data)
 
@@ -148,7 +147,7 @@ class TestFlaskApp(unittest.TestCase):
 
     def test_add_prop_firm(self):
         # initial number of prop firms  
-        response = self.client.get('/prop_firms')
+        response = self.client.get('/prop_firms/')
         data = response.get_json()
         initial_prop_firm_count = len(data)
         prop_firm_name = 'Test Prop Firm ' + str(initial_prop_firm_count + 1)
@@ -157,7 +156,7 @@ class TestFlaskApp(unittest.TestCase):
             'name': prop_firm_name,
             'full_balance': 100000,
         }
-        response = self.client.post('/prop_firms', json=prop_firm_data)
+        response = self.client.post('/prop_firms/', json=prop_firm_data)
         data = response.get_json()
         
         self.assertEqual(response.status_code, 200)
@@ -174,12 +173,12 @@ class TestFlaskApp(unittest.TestCase):
 
     def test_add_trade(self):
         # initial number of trades
-        response = self.client.get('/trades')
+        response = self.client.get('/trades/')
         data = response.get_json()
         initial_trade_count = len(data['trades'])
 
         # add a trade
-        trade_response = self.client.post('/trades', data=self.HARDCODED_TRADE_MSG)
+        trade_response = self.client.post('/trades/', data=self.HARDCODED_TRADE_MSG)
         trade_data = trade_response.get_json()
         
         # the status code should be 200 and the response should contain the trade id
@@ -200,12 +199,12 @@ class TestFlaskApp(unittest.TestCase):
 
     def test_when_a_trade_is_added_it_should_be_added_for_all_prop_firms(self):
         # add a trade
-        trade_response = self.client.post('/trades', data=self.HARDCODED_TRADE_MSG)
+        trade_response = self.client.post('/trades/', data=self.HARDCODED_TRADE_MSG)
         trade_data = trade_response.get_json()
         trade_id = trade_data['trade_id']
 
         # every time a trade is placed it should be automatically added for all the prop firms
-        prop_firms_response = self.client.get('/prop_firms')
+        prop_firms_response = self.client.get('/prop_firms/')
         prop_firms_data = prop_firms_response.get_json()
         self.assertEqual(prop_firms_response.status_code, 200)
 
@@ -223,7 +222,7 @@ class TestFlaskApp(unittest.TestCase):
         # add a trade
         trade_position_size = -33.333
         update_trade_msg = f'"strategy":"Heiken-Ashi CE LSMA [v5.1]", "order":"sell", "contracts":149.949, "ticker":"RUNEUSDT.P", "position_size":{trade_position_size}'
-        self.client.post('/trades', data=update_trade_msg)
+        self.client.post('/trades/', data=update_trade_msg)
 
         # get the prop firm
         prop_firm_response = self.client.get(f'/prop_firms/{self.prop_firm_id}')
@@ -243,7 +242,7 @@ class TestFlaskApp(unittest.TestCase):
 
         # add a trade
         trade_position_size = -33.333
-        trade_response = self.client.post('/trades', data=f'"strategy":"Heiken-Ashi CE LSMA [v5.1]", "order":"sell", "contracts":149.949, "ticker":"RUNEUSDT.P", "position_size":{trade_position_size}')
+        trade_response = self.client.post('/trades/', data=f'"strategy":"Heiken-Ashi CE LSMA [v5.1]", "order":"sell", "contracts":149.949, "ticker":"RUNEUSDT.P", "position_size":{trade_position_size}')
         trade_data = trade_response.get_json()
         trade_id = trade_data['trade_id']
 
@@ -266,7 +265,7 @@ class TestFlaskApp(unittest.TestCase):
         initial_trade_count = len(data['trades'])
 
         # add a trade
-        response = self.client.post('/trades', data=self.HARDCODED_TRADE_MSG)
+        response = self.client.post('/trades/', data=self.HARDCODED_TRADE_MSG)
         data = response.get_json()
         trade_id = data['trade_id']
 
@@ -281,15 +280,15 @@ class TestFlaskApp(unittest.TestCase):
 
     def test_when_a_prop_firm_is_deleted_its_trades_should_not_be_deleted(self):
         # add a temporary prop firm
-        number_of_prop_firms = len(self.client.get('/prop_firms').get_json())
+        number_of_prop_firms = len(self.client.get('/prop_firms/').get_json())
 
         prop_firm_name = 'Test Prop Firm ' + str(number_of_prop_firms + 1)
-        response = self.client.post('/prop_firms', json={'name': prop_firm_name, 'full_balance': 100000})
+        response = self.client.post('/prop_firms/', json={'name': prop_firm_name, 'full_balance': 100000})
         data = response.get_json()
         prop_firm_id = data['prop_firm_id']
 
         # add a trade to the prop firm
-        response = self.client.post('/trades', data=self.HARDCODED_TRADE_MSG)
+        response = self.client.post('/trades/', data=self.HARDCODED_TRADE_MSG)
         data = response.get_json()
         trade_id = data['trade_id']
 
@@ -312,7 +311,7 @@ class TestFlaskApp(unittest.TestCase):
         # add a prop firm is not needed because the prop firm is already created in the setup
 
         # get the current number of PropFirms
-        number_of_prop_firms = len(self.client.get('/prop_firms').get_json())
+        number_of_prop_firms = len(self.client.get('/prop_firms/').get_json())
 
         # create a prop firm object to update
         test_prop_firm_object = {
@@ -368,7 +367,7 @@ class TestFlaskApp(unittest.TestCase):
             "ticker":"{new_ticker}", "position_size":{new_position_size}'
 
         # add a trade
-        response = self.client.post('/trades', data=existing_trade_msg)
+        response = self.client.post('/trades/', data=existing_trade_msg)
         data = response.get_json()
         trade_id = data['trade_id']
 
@@ -380,7 +379,7 @@ class TestFlaskApp(unittest.TestCase):
             'ticker': new_ticker,
             'position_size': new_position_size
         }
-        response = self.client.put('/trades_associations', json=update_obj)
+        response = self.client.put('/trades_associations/', json=update_obj)
         data = response.get_json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data['status'], 'success')
@@ -393,7 +392,7 @@ class TestFlaskApp(unittest.TestCase):
         data = response.get_json()
 
         # get the prop firms
-        response = self.client.get('/prop_firms')
+        response = self.client.get('/prop_firms/')
         prop_firms_data = response.get_json()
 
         # get the trade and check the updates for all the prop firms
@@ -409,7 +408,7 @@ class TestFlaskApp(unittest.TestCase):
                     self.assertEqual(trade['position_size'], new_position_size)
         
         # in the trades association table, only the trade with this ID should have that position size
-        response = self.client.get('/trades_associations')
+        response = self.client.get('/trades_associations/')
         associated_trades = response.get_json()
         for trade in associated_trades:
             if trade['id'] == trade_id:
