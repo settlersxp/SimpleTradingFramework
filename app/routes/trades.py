@@ -46,7 +46,7 @@ def view_trades():
         .join(PropFirm, PropFirm.id == prop_firm_trades.c.prop_firm_id)\
         .order_by(Trade.created_at.desc())\
         .all()
-    return render_template('trades/index.html', trades_with_firms=trades_with_firms)
+    return render_template('trades/view_trades.html', trades_with_firms=trades_with_firms)
 
 
 @bp.route('/trades_associations', methods=['PUT'])

@@ -2,13 +2,13 @@ POST https://bc3bfdbf48e0335c8a052a5706c444e2.qality.tech/tvt/trades/ HTTP/1.1
 content-type: application/json
 
 {
-     "strategy":"Heiken-Ashi CE LSMA [v5.1]", "order":"sell", "contracts":149.949, "ticker":"RUNEUSDT.P", "position_size":-149.949
+     "\"strategy\":\"Heiken-Ashi CE LSMA [v5.1]\", \"order\":\"sell\", \"contracts\":69.843, \"ticker\":RUNEUSDT.P, \"position_size\":0"
 }
 
+###
+POST https://bc3bfdbf48e0335c8a052a5706c444e2.qality.tech/tvt/trades/ HTTP/1.1
+content-type: application/json
 
-# POST http://localhost:3100/receiveMessage HTTP/1.1
-# content-type: application/json
-
-# {
-#    "strategy":"Heiken-Ashi CE LSMA [v5.1]", "order":"sell", "contracts":149.949, "ticker":"RUNEUSDT.P", "position_size":-149.949
-# }
+{
+   "strategy":"Heiken-Ashi CE LSMA [v5.1]", "order":"sell", "contracts":149.949, "ticker":"RUNEUSDT.P", "position_size":-149.949
+}

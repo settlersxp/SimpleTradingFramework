@@ -10,6 +10,7 @@ class Config:
     TESTING = False
     SQLALCHEMY_ECHO = False
     TIME_ZONE = 'UTC'
+    SECRET_KEY = 'your-secret-key-here'  # Required for CSRF protection
 
 
 class DevelopmentConfig(Config):

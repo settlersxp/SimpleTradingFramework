@@ -1,6 +1,6 @@
 from app import create_app, db
 from config import DevelopmentConfig
-from flask import jsonify, redirect, url_for, request, g
+from flask import jsonify, redirect, url_for, request, g, render_template
 from flask_migrate import Migrate, upgrade
 import os
 import signal
@@ -184,7 +184,7 @@ class FlaskApp:
     def register_routes(self):
         @self.app.route('/', methods=['GET'])
         def hello():
-            return jsonify({"message": "Hello, World!"})
+            return render_template('index.html')
 
         @self.app.route('/open_positions', methods=['POST'])
         def open_positions():

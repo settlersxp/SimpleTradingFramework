@@ -1,5 +1,6 @@
 from app import db
 from datetime import datetime
+import json
 
 class Trade(db.Model):
     __tablename__ = 'trades'
@@ -25,13 +26,6 @@ class Trade(db.Model):
 
     @staticmethod
     def from_mt_string(mt_string: str):
-        print(f"mt_string: {mt_string}")
-        # Convert the string to a proper dictionary format
-        mt_string = '{' + mt_string + '}'
-        # Replace single quotes with double quotes if needed
-        mt_string = mt_string.replace("'", '"')
-        
-        import json
         try:
             data = json.loads(mt_string)
             return Trade(

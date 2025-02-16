@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "components/form_field.html" import render_field %}
+
+{% block title %}Create Prop Firm{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Create New Prop Firm</h2>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('prop_firms.create_and_get_prop_firms') }}" method="POST">
+                    {{ render_field(form.name) }}
+                    {{ render_field(form.full_balance) }}
+                    {{ render_field(form.username) }}
+                    {{ render_field(form.password) }}
+                    {{ render_field(form.ip_address) }}
+                    {{ render_field(form.port) }}
+                    {{ render_field(form.platform_type) }}
+                    {{ render_field(form.is_active) }}
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Create Prop Firm</button>
+                        <a href="{{ url_for('prop_firms.view_prop_firms') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

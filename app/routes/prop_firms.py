@@ -1,6 +1,7 @@
-from flask import Blueprint, jsonify, request, render_template
+from flask import Blueprint, jsonify, request, render_template, redirect, url_for, flash
 from app.models.prop_firm import PropFirm
 from app import db
+from app.forms.prop_firm import PropFirmForm
 
 bp = Blueprint('prop_firms', __name__, url_prefix='/prop_firms')
 
@@ -18,17 +19,48 @@ def create_and_get_prop_firms():
                 "trades": [t.id for t in pf.trades]
             } for pf in prop_firms])
     elif request.method == 'POST':
-        # create a new prop firm
-        data = request.get_json()
-        data['platform_type'] = 'MT5'
-        prop_firm = PropFirm(**data)
-        prop_firm.set_available_balance_to_full_balance()
-        db.session.add(prop_firm)
-        db.session.commit()
-        return jsonify({
-            "status": "success",
-            "prop_firm_id": prop_firm.id
-        })    
+        try:
+            # Handle both JSON and form data
+            if request.is_json:
+                data = request.get_json()
+            else:
+                data = request.form.to_dict()
+                # Convert string values to appropriate types
+                if 'full_balance' in data:
+                    data['full_balance'] = float(data['full_balance'])
+                if 'port' in data:
+                    data['port'] = int(data['port'])
+                if 'is_active' in data:
+                    data['is_active'] = data['is_active'] == 'on'
+                else:
+                    data['is_active'] = False
+
+            # Set default platform type if not provided
+            data['platform_type'] = data.get('platform_type', 'MT5')
+            
+            prop_firm = PropFirm(**data)
+            prop_firm.set_available_balance_to_full_balance()
+            db.session.add(prop_firm)
+            db.session.commit()
+
+            # Redirect to the prop firms list view if it's a form submission
+            if not request.is_json:
+                return redirect(url_for('prop_firms.view_prop_firms'))
+
+            return jsonify({
+                "status": "success",
+                "prop_firm_id": prop_firm.id
+            })
+        except Exception as e:
+            db.session.rollback()
+            if request.is_json:
+                return jsonify({
+                    "status": "error",
+                    "message": str(e)
+                }), 400
+            # Flash error message and redirect back to form if it's a form submission
+            flash(f'Error creating prop firm: {str(e)}', 'error')
+            return redirect(url_for('prop_firms.create_prop_firm_view'))
 
 
 @bp.route('/<int:prop_firm_id>', methods=['DELETE', 'GET'])
@@ -94,12 +126,21 @@ def view_prop_firms():
     return render_template('prop_firms/prop_firms.html', prop_firms=prop_firms)
 
 
-@bp.route('/view/<int:prop_firm_id>/edit')
+@bp.route('/view/create', methods=['GET'])
+def create_prop_firm_view():
+    form = PropFirmForm()
+    return render_template('prop_firms/create_prop_firm.html', form=form)
+
+
+@bp.route('/<int:prop_firm_id>/edit', methods=['GET'])
 def edit_prop_firm(prop_firm_id):
     prop_firm = db.session.get(PropFirm, prop_firm_id)
     if not prop_firm:
-        return "Prop Firm not found", 404
-    return render_template('prop_firms/edit_prop_firm.html', prop_firm=prop_firm)
+        flash('Prop Firm not found', 'error')
+        return redirect(url_for('prop_firms.view_prop_firms'))
+    
+    form = PropFirmForm(obj=prop_firm)
+    return render_template('prop_firms/edit_prop_firm.html', form=form, prop_firm=prop_firm)
 
 @bp.route('/<int:prop_firm_id>', methods=['PUT'])
 def update_prop_firm(prop_firm_id):
