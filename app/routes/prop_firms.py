@@ -145,10 +145,7 @@ def edit_prop_firm(prop_firm_id):
 @bp.route('/<int:prop_firm_id>', methods=['PUT'])
 def update_prop_firm(prop_firm_id):
     # a for or a JSON object can be received
-    if request.method == 'POST':
-        received_data = request.form.to_dict()
-    elif request.method == 'PUT':
-        received_data = request.get_json()
+    received_data = request.get_json()
 
     # update an existing prop firm with the data received from the request
     try:
@@ -161,10 +158,7 @@ def update_prop_firm(prop_firm_id):
         db_prop_firm.full_balance = float(received_data.get('full_balance', request.form.get('full_balance')))
         db_prop_firm.username = received_data.get('username', request.form.get('username'))
         db_prop_firm.password = received_data.get('password', request.form.get('password'))
-        db_prop_firm.ip_address = received_data.get('ip_address', request.form.get('ip_address'))
-        db_prop_firm.port = int(received_data.get('port', request.form.get('port')))
-        db_prop_firm.platform_type = received_data.get('platform_type', request.form.get('platform_type'))
-        db_prop_firm.is_active = received_data.get('is_active', request.form.get('is_active'))
+        db_prop_firm.is_active = 1 if received_data.get('is_active') == 'y' else 0
         
         # Update downdraft percentage if full balance changed
         if 'full_balance' in received_data:

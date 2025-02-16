@@ -12,14 +12,11 @@
             </div>
             <div class="card-body">
                 <form action="{{ url_for('prop_firms.create_and_get_prop_firms') }}" method="POST">
-                    {{ render_field(form.name) }}
-                    {{ render_field(form.full_balance) }}
-                    {{ render_field(form.username) }}
-                    {{ render_field(form.password) }}
-                    {{ render_field(form.ip_address) }}
-                    {{ render_field(form.port) }}
-                    {{ render_field(form.platform_type) }}
-                    {{ render_field(form.is_active) }}
+                    {% for field in form %}
+                        {% if field.type != 'CSRFTokenField' %}
+                            {{ render_field(field) }}
+                        {% endif %}
+                    {% endfor %}
                     
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary">Create Prop Firm</button>

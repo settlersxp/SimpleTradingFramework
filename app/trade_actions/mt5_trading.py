@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 class MT5Trading(TradingInterface):
     def __init__(self):
         self.connected = False
+        self.mt_path = "G:\\MetaTrader 5\\terminal64.exe"
         
     def connect(self, credentials: Dict[str, Any]) -> bool:
         """
@@ -30,7 +31,7 @@ class MT5Trading(TradingInterface):
                 login=credentials.get('username'),
                 password=credentials.get('password'),
                 server=credentials.get('server'),
-                path=credentials.get('path')
+                path=self.mt_path
             ):
                 logger.error(f"MT5 initialization failed: {mt5.last_error()}")
                 return False

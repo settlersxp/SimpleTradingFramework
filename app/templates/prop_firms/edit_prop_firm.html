@@ -12,14 +12,11 @@
             </div>
             <div class="card-body">
                 <form id="edit-prop-firm-form">
-                    {{ render_field(form.name, value=prop_firm.name) }}
-                    {{ render_field(form.full_balance, value=prop_firm.full_balance) }}
-                    {{ render_field(form.username, value=prop_firm.username) }}
-                    {{ render_field(form.password, value=prop_firm.password) }}
-                    {{ render_field(form.ip_address, value=prop_firm.ip_address) }}
-                    {{ render_field(form.port, value=prop_firm.port) }}
-                    {{ render_field(form.platform_type, value=prop_firm.platform_type) }}
-                    {{ render_field(form.is_active, checked=prop_firm.is_active) }}
+                    {% for field in form %}
+                        {% if field.type != 'CSRFTokenField' %}
+                            {{ render_field(field) }}
+                        {% endif %}
+                    {% endfor %}
                     
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary">Update Prop Firm</button>

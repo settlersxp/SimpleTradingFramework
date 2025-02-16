@@ -7,8 +7,7 @@ class PropFirmForm(FlaskForm):
     full_balance = FloatField('Full Balance', validators=[DataRequired(), NumberRange(min=0)])
     username = StringField('Username', validators=[DataRequired()])
     password = StringField('Password', validators=[DataRequired()])
-    ip_address = StringField('IP Address', validators=[DataRequired()])
-    port = IntegerField('Port', validators=[DataRequired(), NumberRange(min=1, max=65535)])
+    ip_address = StringField('MT5 Server', validators=[DataRequired()])
     platform_type = SelectField('Platform Type', 
                               choices=[('MT5', 'MT5'), ('MT4', 'MT4')],
                               validators=[DataRequired()])
