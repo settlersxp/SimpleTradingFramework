@@ -18,7 +18,7 @@ def add_trade_associations(mt_string):
     for prop_firm in prop_firms:
         prop_firm.trading.place_trade(trade)
         prop_firm.trades.append(trade)
-        prop_firm.update_available_balance(trade)    
+        prop_firm.update_available_balance(trade)
     db.session.commit()
     return trade
 

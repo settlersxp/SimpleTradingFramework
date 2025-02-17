@@ -1,6 +1,7 @@
 from app import db
 from datetime import datetime
 import json
+import re
 
 class Trade(db.Model):
     __tablename__ = 'trades'
@@ -27,16 +28,31 @@ class Trade(db.Model):
     @staticmethod
     def from_mt_string(mt_string: str):
         try:
-            data = json.loads(mt_string)
-            return Trade(
-                strategy=data['strategy'],
-                order_type=data['order'],
-                contracts=float(data['contracts']),
-                ticker=data['ticker'],
-                position_size=float(data['position_size'])
-            )
-        except (json.JSONDecodeError, KeyError) as e:
-            raise ValueError(f"Invalid MT string format: {e}") 
+            # Attempt to format the input string to be a valid JSON string
+            formatted_string = '{' + mt_string.strip() + '}'
+            
+            # Load the JSON data
+            data = json.loads(formatted_string)
+
+        except json.JSONDecodeError:
+            # If JSON loading fails, apply regex to fix the string
+            formatted_string = '{' + mt_string.strip() + '}'
+            formatted_string = re.sub(r'(?<="ticker":)([^\s",]+)', r'"\1"', formatted_string)
+
+            # Try loading the JSON data again
+            data = json.loads(formatted_string)
+
+        except KeyError as e:
+            raise ValueError(f"Invalid MT string format: {e}")
+
+        # Create a Trade instance using the extracted data
+        return Trade(
+            strategy=data['strategy'],
+            order_type=data['order'],
+            contracts=float(data['contracts']),
+            ticker=data['ticker'],
+            position_size=float(data['position_size'])
+        )
 
     @staticmethod
     def update_matching_trades(strategy, order_type, contracts, ticker, position_size):

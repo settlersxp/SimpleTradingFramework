@@ -1,14 +1,18 @@
+# Uses the REST Client extension for VS Code to send requests to the server
+
 POST https://bc3bfdbf48e0335c8a052a5706c444e2.qality.tech/tvt/trades/ HTTP/1.1
 content-type: application/json
 
 {
-     "\"strategy\":\"Heiken-Ashi CE LSMA [v5.1]\", \"order\":\"sell\", \"contracts\":69.843, \"ticker\":RUNEUSDT.P, \"position_size\":0"
+    "strategy": "BotifyX",
+    "order": "sell",
+    "contracts": 0.18,
+    "ticker": "SOLUSDT.P",
+    "position_size": -0.18
 }
 
-###
+### Test with MT String
 POST https://bc3bfdbf48e0335c8a052a5706c444e2.qality.tech/tvt/trades/ HTTP/1.1
 content-type: application/json
 
-{
-   "strategy":"Heiken-Ashi CE LSMA [v5.1]", "order":"sell", "contracts":149.949, "ticker":"RUNEUSDT.P", "position_size":-149.949
-}
+"strategy":"BotifyX", "order":"sell", "contracts":"0.18", "ticker":"SOLUSDT.P", "position_size":"-0.18"

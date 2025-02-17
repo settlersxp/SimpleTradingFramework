@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 class MT5Trading(TradingInterface):
     def __init__(self):
+        self.credentials = None
         self.connected = False
         self.mt_path = "G:\\MetaTrader 5\\terminal64.exe"
         
@@ -105,6 +106,7 @@ class MT5Trading(TradingInterface):
                     }
                 }
             
+            # Return the trade details upon successful placement
             return {
                 'success': True,
                 'message': 'Trade placed successfully',
@@ -112,7 +114,7 @@ class MT5Trading(TradingInterface):
                 'details': {
                     'volume': result.volume,
                     'price': result.price,
-                    'request_id': result.request_id
+                    'request_id': result.request_id,
                 }
             }
             

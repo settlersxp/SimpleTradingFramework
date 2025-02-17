@@ -4,7 +4,6 @@ from app.models.trade import Trade
 import importlib
 from typing import Optional, ClassVar
 from app.trade_actions.trade_interface import TradingInterface
-import logging
 
 
 class PropFirm(db.Model):
@@ -24,7 +23,10 @@ class PropFirm(db.Model):
     platform_type = db.Column(db.String(100), nullable=True)
 
     # One to many relationship with trades in a different association table
-    trades = db.relationship('Trade', secondary='prop_firm_trades', backref='prop_firm', lazy=True)
+    trades = db.relationship('Trade',
+                            secondary='prop_firm_trades',
+                            backref=db.backref('prop_firms', lazy='dynamic'),
+                            lazy='dynamic')
 
     _trading_instance: ClassVar[Optional[TradingInterface]] = None
     
@@ -43,12 +45,18 @@ class PropFirm(db.Model):
             self._trading_instance = trading_class()
             
             # Try to connect if we have credentials
-            if all([self.username, self.password, self.ip_address, self.port]):
+            if all([self.username, self.password, self.ip_address]):
                 self._trading_instance.connect({
                     'username': self.username,
                     'password': self.password,
-                    'server': f"{self.ip_address}:{self.port}"
+                    'server': f"{self.ip_address}"
                 })
+            
+            self._trading_instance.credentials = {
+                'username': self.username,
+                'password': self.password,
+                'server': f"{self.ip_address}"
+            }
                 
         return self._trading_instance
 
