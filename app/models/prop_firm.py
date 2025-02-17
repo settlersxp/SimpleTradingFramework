@@ -60,6 +60,10 @@ class PropFirm(db.Model):
                 
         return self._trading_instance
 
+    def is_connected(self) -> bool:
+        # Implement your logic to check if the connection is active
+        return self._trading_instance is not None and self._trading_instance.is_connected()
+
     # when a prop firm is created, the available balance should be set to the full balance
     def set_available_balance_to_full_balance(self):
         self.available_balance = self.full_balance

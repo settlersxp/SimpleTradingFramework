@@ -2,6 +2,7 @@ from app import create_app, db
 from config import DevelopmentConfig
 from flask import jsonify, redirect, url_for, request, g, render_template
 from flask_migrate import Migrate, upgrade
+from app.models.prop_firm import PropFirm
 import os
 import signal
 import logging
@@ -198,7 +199,25 @@ class FlaskApp:
 
         @self.app.route('/health', methods=['GET'])
         def health():
-            return jsonify({"status": "healthy"})
+            prop_firms = PropFirm.query.all()
+
+            # Prepare health status
+            health_status = {
+                "status": "healthy",
+                "prop_firms": []
+            }
+            
+            for firm in prop_firms:
+                # Check if the trading instance is connected
+                is_connected = firm.trading is not None and firm.trading.is_connected()  # Assuming is_connected() is a method in your TradingInterface
+                
+                health_status["prop_firms"].append({
+                    "id": firm.id,
+                    "name": firm.name,
+                    "is_active": firm.is_active,
+                    "connected": is_connected
+                })
+            return jsonify(health_status)
             
         @self.app.route('/shutdown', methods=['GET'])
         def shutdown():

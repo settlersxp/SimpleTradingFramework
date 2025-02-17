@@ -7,30 +7,30 @@ if TYPE_CHECKING:
 
 class TradingInterface(ABC):
     """Abstract base class for trading platform interactions"""
-    
+
     @abstractmethod
     def connect(self, credentials: Dict[str, Any]) -> bool:
         """
         Connect to the trading platform
-        
+
         Args:
             credentials (dict): Dictionary containing connection credentials
                               (username, password, server, etc.)
-        
+
         Returns:
             bool: True if connection successful, False otherwise
         """
         pass
-    
+
     @abstractmethod
     def place_trade(self, trade: 'Trade') -> Dict[str, Any]:
         """
         Place a trade on the platform
-        
+
         Args:
             trade_details (dict): Dictionary containing trade details
                                 (symbol, type, volume, etc.)
-        
+
         Returns:
             dict: Response containing trade status and details
                  {
@@ -40,4 +40,11 @@ class TradingInterface(ABC):
                      'details': dict
                  }
         """
-        pass 
+        pass
+
+    @abstractmethod
+    def is_connected(self) -> bool:
+        """
+        Check if the connection is active
+        """
+        pass
