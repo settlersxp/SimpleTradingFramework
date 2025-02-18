@@ -145,6 +145,11 @@ class FlaskApp:
             
             # Log and flush immediately
             request_logger.info(json.dumps(log_data, indent=2))
+
+            #ignore the get requests
+            if request.method == 'GET':
+                return
+            
             for handler in request_logger.handlers:
                 handler.flush()
 
@@ -175,6 +180,11 @@ class FlaskApp:
             
             # Log and flush immediately
             request_logger.info(json.dumps(log_data, indent=2))
+
+            #ignore the get requests
+            if request.method == 'GET':
+                return response
+            
             for handler in request_logger.handlers:
                 handler.flush()
 
