@@ -21,6 +21,7 @@
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary">Update Prop Firm</button>
                         <a href="{{ url_for('prop_firms.view_prop_firms') }}" class="btn btn-secondary">Cancel</a>
+                        <a href="{{ url_for('prop_firms.manage_trade_pairs', prop_firm_id=prop_firm.id) }}" class="btn btn-info">Associate Trade Pairs</a>
                     </div>
                 </form>
             </div>

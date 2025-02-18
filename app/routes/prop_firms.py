@@ -2,6 +2,8 @@ from flask import Blueprint, jsonify, request, render_template, redirect, url_fo
 from app.models.prop_firm import PropFirm
 from app import db
 from app.forms.prop_firm import PropFirmForm
+from app.models.trade_pairs import TradePairs
+from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 
 bp = Blueprint('prop_firms', __name__, url_prefix='/prop_firms')
 
@@ -177,3 +179,55 @@ def update_prop_firm(prop_firm_id):
             "status": "error",
             "message": str(e)
         }), 400
+
+
+@bp.route('/<int:prop_firm_id>/trade_pairs', methods=['GET', 'POST'])
+def manage_trade_pairs(prop_firm_id):
+    prop_firm = db.session.get(PropFirm, prop_firm_id)
+    if not prop_firm:
+        flash('Prop Firm not found', 'error')
+        return redirect(url_for('prop_firms.view_prop_firms'))
+    
+    if request.method == 'GET':
+        # Get all trade pairs and mark the ones associated with this prop firm
+        trade_pairs = TradePairs.query.all()
+        current_associations = PropFirmTradePairAssociation.query.filter_by(prop_firm_id=prop_firm_id).all()
+        
+        # Create a dict of current associations for easy lookup
+        current_assoc_dict = {assoc.trade_pair_id: assoc.label for assoc in current_associations}
+        
+        # Enhance trade pairs with association info
+        for pair in trade_pairs:
+            pair.is_associated = pair.id in current_assoc_dict
+            pair.current_label = current_assoc_dict.get(pair.id, '')
+        
+        return render_template('prop_firms/manage_trade_pairs.html', 
+                             prop_firm=prop_firm, 
+                             trade_pairs=trade_pairs)
+    
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+            associations = data.get('associations', [])
+            
+            # Remove all existing associations
+            PropFirmTradePairAssociation.query.filter_by(prop_firm_id=prop_firm_id).delete()
+            
+            # Add new associations
+            for assoc in associations:
+                new_assoc = PropFirmTradePairAssociation(
+                    prop_firm_id=prop_firm_id,
+                    trade_pair_id=assoc['trade_pair_id'],
+                    label=assoc['label']
+                )
+                db.session.add(new_assoc)
+            
+            db.session.commit()
+            return jsonify({"status": "success"})
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({
+                "status": "error",
+                "message": str(e)
+            }), 400

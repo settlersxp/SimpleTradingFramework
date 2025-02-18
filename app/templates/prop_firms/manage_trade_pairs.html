@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Trade Pairs - {{ prop_firm.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Manage Trade Pairs for {{ prop_firm.name }}</h2>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Trade Pair</th>
+                            <th>Label</th>
+                            <th>Select</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pair in trade_pairs %}
+                        <tr data-pair-id="{{ pair.id }}">
+                            <td>{{ pair.name }}</td>
+                            <td>
+                                <input type="text" class="form-control pair-label" 
+                                       value="{{ pair.current_label or '' }}"
+                                       placeholder="Enter label">
+                            </td>
+                            <td>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input pair-checkbox" 
+                                           {% if pair.is_associated %}checked{% endif %}>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <div class="mt-4">
+                    <button id="saveAssociations" class="btn btn-primary">Save Associations</button>
+                    <a href="{{ url_for('prop_firms.edit_prop_firm', prop_firm_id=prop_firm.id) }}" class="btn btn-secondary">Back</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('saveAssociations').addEventListener('click', async function() {
+    const associations = [];
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const pairId = row.dataset.pairId;
+        const checkbox = row.querySelector('.pair-checkbox');
+        const label = row.querySelector('.pair-label').value;
+        
+        if (checkbox.checked) {
+            associations.push({
+                trade_pair_id: parseInt(pairId),
+                label: label
+            });
+        }
+    });
+    
+    try {
+        const response = await fetch(`/prop_firms/{{ prop_firm.id }}/trade_pairs`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ associations: associations })
+        });
+        
+        if (response.ok) {
+            alert('Trade pair associations saved successfully!');
+            window.location.href = "{{ url_for('prop_firms.edit_prop_firm', prop_firm_id=prop_firm.id) }}";
+        } else {
+            const error = await response.json();
+            alert(error.message || 'Error saving associations');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error saving associations');
+    }
+});
+</script>
+{% endblock %} 

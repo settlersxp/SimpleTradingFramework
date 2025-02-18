@@ -7,5 +7,5 @@ migrate = Migrate(flask_app, db)
 if __name__ == '__main__':
     with flask_app.app_context():
         # Import models so that Flask-Migrate can detect them
-        from app.models import PropFirm, Trade, TradePairs
+        from app.models import PropFirm, Trade, TradePairs, PropFirmTradePairAssociation
         db.create_all()
