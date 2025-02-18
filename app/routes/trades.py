@@ -19,7 +19,7 @@ def get_trade(trade_id):
 @bp.route('/', methods=['GET', 'POST'])
 def trades():
     if request.method == 'GET':
-        trades = db.session.query(Trade).all()
+        trades = db.session.query(Trade).order_by(Trade.id.desc()).all()
         return jsonify({
             "trades": [trade.to_dict() for trade in trades]
         })
@@ -44,7 +44,7 @@ def view_trades():
         .select_from(Trade)\
         .join(prop_firm_trades, Trade.id == prop_firm_trades.c.trade_id)\
         .join(PropFirm, PropFirm.id == prop_firm_trades.c.prop_firm_id)\
-        .order_by(Trade.created_at.desc())\
+        .order_by(Trade.id.desc())\
         .all()
     return render_template('trades/view_trades.html', trades_with_firms=trades_with_firms)
 
