@@ -2,6 +2,8 @@ from flask import Blueprint, jsonify, request
 from app.models.prop_firm import PropFirm
 from app.models.trade import Trade
 from app.models.trade_association import prop_firm_trades
+from app.models.trade_pairs import TradePairs
+from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app import db
 
 bp = Blueprint('trades_association', __name__)
@@ -13,12 +15,27 @@ def add_trade_associations(mt_string):
     db.session.add(trade)
     db.session.commit()
 
-    # Add trade to all prop firms
+    # Check if the trade's ticker exists in trade_pairs
+    trade_pair = db.session.query(TradePairs).filter_by(name=trade.ticker).first()
+    if not trade_pair:
+        # If ticker is not tracked, skip prop firm associations
+        return trade
+
+    # Add trade to prop firms that have this trade pair associated
     prop_firms = db.session.query(PropFirm).all()
     for prop_firm in prop_firms:
-        prop_firm.trading.place_trade(trade)
-        prop_firm.trades.append(trade)
-        prop_firm.update_available_balance(trade)
+        # Check if this prop firm has this trade pair associated
+        association = db.session.query(PropFirmTradePairAssociation).filter_by(
+            prop_firm_id=prop_firm.id,
+            trade_pair_id=trade_pair.id
+        ).first()
+
+        if association:
+            # If association exists, use the label when placing the trade
+            prop_firm.trading.place_trade(trade, label=association.label)
+            prop_firm.trades.append(trade)
+            prop_firm.update_available_balance(trade)
+
     db.session.commit()
     return trade
 

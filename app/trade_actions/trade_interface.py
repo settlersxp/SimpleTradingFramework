@@ -23,13 +23,14 @@ class TradingInterface(ABC):
         pass
 
     @abstractmethod
-    def place_trade(self, trade: 'Trade') -> Dict[str, Any]:
+    def place_trade(self, trade: 'Trade', label: str) -> Dict[str, Any]:
         """
         Place a trade on the platform
 
         Args:
             trade_details (dict): Dictionary containing trade details
                                 (ticker, type, volume, etc.)
+            label (str): Label for the trade symbol specific to the prop firm
 
         Returns:
             dict: Response containing trade status and details

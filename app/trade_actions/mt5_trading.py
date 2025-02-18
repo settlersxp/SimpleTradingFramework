@@ -45,7 +45,7 @@ class MT5Trading(TradingInterface):
             self.connected = False
             return False
 
-    def place_trade(self, trade: 'Trade') -> Dict[str, Any]:
+    def place_trade(self, trade: 'Trade', label: str) -> Dict[str, Any]:
         """
         Place trade on MT5
         
@@ -68,10 +68,10 @@ class MT5Trading(TradingInterface):
             # Prepare trade request
             request = {
                 "action": mt5.TRADE_ACTION_DEAL,
-                "symbol": trade.ticker,
+                "symbol": label,
                 "volume": float(trade.contracts),
                 "type": mt5.ORDER_TYPE_BUY if trade.order_type.upper() == 'BUY' else mt5.ORDER_TYPE_SELL,
-                "price": mt5.symbol_info_tick(trade.ticker).ask,
+                "price": mt5.symbol_info_tick(label).ask,
                 "deviation": float(trade.position_size),
                 "magic": 234000,
                 "comment": trade.to_string(),
