@@ -25,6 +25,9 @@ class Trade(db.Model):
             'created_at': self.created_at.isoformat()
         }
 
+    def to_string(self):
+        return json.dumps(self.to_dict())
+    
     @staticmethod
     def from_mt_string(mt_string: str):
         try:

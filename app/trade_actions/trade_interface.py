@@ -29,7 +29,7 @@ class TradingInterface(ABC):
 
         Args:
             trade_details (dict): Dictionary containing trade details
-                                (symbol, type, volume, etc.)
+                                (ticker, type, volume, etc.)
 
         Returns:
             dict: Response containing trade status and details

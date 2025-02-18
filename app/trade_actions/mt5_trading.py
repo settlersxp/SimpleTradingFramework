@@ -51,7 +51,7 @@ class MT5Trading(TradingInterface):
         
         Args:
             trade_details (dict): {
-                'symbol': str,
+                'ticker': str,
                 'volume': float,
                 'type': str ('BUY' or 'SELL'),
                 'price': float (optional),
@@ -68,13 +68,13 @@ class MT5Trading(TradingInterface):
             # Prepare trade request
             request = {
                 "action": mt5.TRADE_ACTION_DEAL,
-                "symbol": trade.symbol,
-                "volume": float(trade.volume),
-                "type": mt5.ORDER_TYPE_BUY if trade.type.upper() == 'BUY' else mt5.ORDER_TYPE_SELL,
-                "price": trade.price,
-                "deviation": 20,
+                "symbol": trade.ticker,
+                "volume": float(trade.contracts),
+                "type": mt5.ORDER_TYPE_BUY if trade.order_type.upper() == 'BUY' else mt5.ORDER_TYPE_SELL,
+                "price": mt5.symbol_info_tick(trade.ticker).ask,
+                "deviation": float(trade.position_size),
                 "magic": 234000,
-                "comment": trade.comment,
+                "comment": trade.to_string(),
                 "type_time": mt5.ORDER_TIME_GTC,
                 "type_filling": mt5.ORDER_FILLING_IOC,
             }
