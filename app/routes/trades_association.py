@@ -10,10 +10,12 @@ bp = Blueprint('trades_association', __name__)
 
 
 @staticmethod
-def add_trade_associations(mt_string):
+def add_trade_associations(mt_string, create_trade=True):
     trade = Trade.from_mt_string(mt_string)
-    db.session.add(trade)
-    db.session.commit()
+    
+    if create_trade:
+        db.session.add(trade)
+        db.session.commit()
 
     # Check if the trade's ticker exists in trade_pairs
     trade_pair = db.session.query(TradePairs).filter_by(name=trade.ticker).first()
@@ -36,7 +38,9 @@ def add_trade_associations(mt_string):
             if outcome['success']:
                 prop_firm.trades.append(trade)
                 prop_firm.update_available_balance(trade)
-
+                print(f"Trade {outcome} placed successfully")
+            else:
+                print(f"Error placing trade {trade.id}: {outcome['message']}")
     db.session.commit()
     return trade
 

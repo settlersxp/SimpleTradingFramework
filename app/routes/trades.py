@@ -106,3 +106,31 @@ def delete_trade(trade_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/<int:trade_id>/replay', methods=['POST'])
+def replay_trade(trade_id):
+    try:
+        trade = Trade.query.get_or_404(trade_id)
+        
+        # Convert trade to MT string format
+        mt_string = (
+            f'"strategy":"{trade.strategy}", '
+            f'"order":"{trade.order_type}", '
+            f'"contracts":"{trade.contracts}", '
+            f'"ticker":"{trade.ticker}", '
+            f'"position_size":"{trade.position_size}"'
+        )
+        
+        # Use the existing add_trade_associations function but without creating a new trade
+        add_trade_associations(mt_string, create_trade=False)
+        
+        return jsonify({
+            "status": "success",
+            "message": "Trade replayed successfully"
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500

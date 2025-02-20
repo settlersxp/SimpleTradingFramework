@@ -69,10 +69,10 @@ class MT5Trading(TradingInterface):
             request = {
                 "action": mt5.TRADE_ACTION_DEAL,
                 "symbol": label,
-                "volume": float(trade.contracts),
+                "volume": max(float(int(trade.contracts)), 0.1),
                 "type": mt5.ORDER_TYPE_BUY if trade.order_type.upper() == 'BUY' else mt5.ORDER_TYPE_SELL,
                 "price": mt5.symbol_info_tick(label).ask,
-                "deviation": int(trade.position_size) if trade.position_size > 1 else 20,
+                "deviation": max(int(trade.position_size), 20),
                 "magic": 234000,
                 "comment": str(trade.id),
                 "type_time": mt5.ORDER_TIME_GTC,

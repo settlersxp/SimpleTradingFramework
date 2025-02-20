@@ -59,25 +59,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     replayButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const tradeData = {
-                strategy: this.dataset.strategy,
-                order: this.dataset.order,
-                contracts: parseFloat(this.dataset.contracts),
-                ticker: this.dataset.ticker,
-                position_size: parseFloat(this.dataset.position)
-            };
-
-            // Create the MT string format
-            const mtString = Object.entries(tradeData)
-                .map(([key, value]) => `"${key}":"${value}"`)
-                .join(', ');
-
-            fetch('/trades/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: mtString
+            const tradeId = this.dataset.tradeId;
+            
+            fetch(`/trades/${tradeId}/replay`, {
+                method: 'POST'
             })
             .then(response => response.json())
             .then(data => {
@@ -88,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
+                console.error('Error:', error);
                 toastr.error('Error replaying trade: ' + error);
             });
         });
