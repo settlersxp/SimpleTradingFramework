@@ -79,13 +79,13 @@ class MT5Trading(TradingInterface):
                 "type_filling": mt5.ORDER_FILLING_IOC,
             }
             # Add optional parameters if provided
-            if trade.get('stop_loss'):
-                request["sl"] = float(trade['stop_loss'])
-            if trade.get('take_profit'):
-                request["tp"] = float(trade['take_profit'])
+            # if trade.get('stop_loss'):
+            #     request["sl"] = float(trade['stop_loss'])
+            # if trade.get('take_profit'):
+            #     request["tp"] = float(trade['take_profit'])
             # Send trade request
             result = mt5.order_send(request)
-            if result.retcode != mt5.TRADE_RETCODE_DONE:
+            if not result or result.retcode != mt5.TRADE_RETCODE_DONE:
                 return {
                     'success': False,
                     'message': f"Order failed: {result.comment}",
@@ -108,7 +108,7 @@ class MT5Trading(TradingInterface):
             }
         except Exception as e:
             logger.error(f"Error placing trade: {e}")
-            logger.error(trade)
+            logger.error(trade.to_string())
             return {
                 'success': False,
                 'message': f"Error placing trade: {str(e)}",

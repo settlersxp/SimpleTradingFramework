@@ -33,6 +33,10 @@
                         >
                             <i class="fas fa-play"></i>
                         </button>
+                        <button class="btn btn-danger btn-sm" 
+                                onclick="deleteTrade('{{ trade.id }}')">
+                            Delete
+                        </button>
                     </td>
                     <td>{{ trade.id }}</td>
                     <td>{{ trade.strategy }}</td>
@@ -68,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .map(([key, value]) => `"${key}":"${value}"`)
                 .join(', ');
 
-            fetch('/trades_associations/', {
+            fetch('/trades/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/plain'
@@ -89,6 +93,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+function deleteTrade(tradeId) {
+    if (confirm('Are you sure you want to delete this trade?')) {
+        fetch(`/trades/${tradeId}`, {
+            method: 'DELETE',
+        })
+        .then(response => {
+            if (response.ok) {
+                // Reload the page to refresh the trade list
+                window.location.reload();
+            } else {
+                alert('Error deleting trade');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting trade');
+        });
+    }
+}
 </script>
 {% endblock %}
 

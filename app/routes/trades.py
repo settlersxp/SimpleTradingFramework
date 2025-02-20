@@ -94,3 +94,15 @@ def update_trades_associations():
 def list_trades():
     trades = Trade.query.order_by(Trade.created_at.desc()).all()
     return render_template('trades/list.html', trades=trades)
+
+
+@bp.route('/<int:trade_id>', methods=['DELETE'])
+def delete_trade(trade_id):
+    try:
+        trade = Trade.query.get_or_404(trade_id)
+        db.session.delete(trade)
+        db.session.commit()
+        return jsonify({'message': 'Trade deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

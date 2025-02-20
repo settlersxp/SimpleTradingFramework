@@ -32,9 +32,10 @@ def add_trade_associations(mt_string):
 
         if association:
             # If association exists, use the label when placing the trade
-            prop_firm.trading.place_trade(trade, label=association.label)
-            prop_firm.trades.append(trade)
-            prop_firm.update_available_balance(trade)
+            outcome = prop_firm.trading.place_trade(trade, label=association.label)
+            if outcome['success']:
+                prop_firm.trades.append(trade)
+                prop_firm.update_available_balance(trade)
 
     db.session.commit()
     return trade
