@@ -7,7 +7,7 @@ venv/
 __pycache__
 .pytest_cache
 **/__pycache__/
-
+**/__pycache__/**
 # all the .pyc files from all the folders
 **/*.pyc
 SimpleTradingFramework/
