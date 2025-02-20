@@ -72,11 +72,11 @@ class MT5Trading(TradingInterface):
                 "volume": float(trade.contracts),
                 "type": mt5.ORDER_TYPE_BUY if trade.order_type.upper() == 'BUY' else mt5.ORDER_TYPE_SELL,
                 "price": mt5.symbol_info_tick(label).ask,
-                "deviation": float(trade.position_size),
+                "deviation": int(trade.position_size) if trade.position_size > 1 else 20,
                 "magic": 234000,
-                "comment": trade.to_string(),
+                "comment": str(trade.id),
                 "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
+                "type_filling": mt5.ORDER_FILLING_RETURN,
             }
             # Add optional parameters if provided
             # if trade.get('stop_loss'):
