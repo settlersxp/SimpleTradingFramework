@@ -88,3 +88,9 @@ def update_trades_associations():
             "status": "error",
             "message": str(e)
         }), 400
+
+
+@bp.route('/list', methods=['GET'])
+def list_trades():
+    trades = Trade.query.order_by(Trade.created_at.desc()).all()
+    return render_template('trades/list.html', trades=trades)

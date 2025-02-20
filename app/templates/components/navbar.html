@@ -15,6 +15,9 @@
                 <li class="nav-item">
                     <a class="nav-link {{ 'active' if request.endpoint == 'trade_pairs.index' else '' }}" href="{{ url_for('trade_pairs.index') }}">Trade Pairs</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.endpoint == 'trades.list_trades' else '' }}" href="{{ url_for('trades.list_trades') }}">Trades List</a>
+                </li>
             </ul>
         </div>
     </div>
