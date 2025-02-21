@@ -14,7 +14,9 @@ prop_firm_trades = db.Table(
         'trade_id',
         db.Integer,
         db.ForeignKey('trades.id'),
-        primary_key=True))
+        primary_key=True),
+    db.Column('platform_id', db.Integer, nullable=True)  # New column for MT5 trade ID
+)
 
 
 class TradeAssociation:

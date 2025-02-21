@@ -33,14 +33,45 @@ def add_trade_associations(mt_string, create_trade=True):
         ).first()
 
         if association:
+            if trade.position_size < 0:
+                # find the trade in the trades table
+                # get all the associated prop firm trade pair associations
+                # get the platform id from the association
+                old_trade = db.session.query(Trade).filter_by(
+                    order_type=trade.order_type,
+                    ticker=trade.ticker,
+                    strategy=trade.strategy,
+                    position_size=trade.position_size,
+                    ).first()
+                
+                if not old_trade:
+                    return trade
+                
+                old_associations = db.session.query(prop_firm_trades).filter_by(
+                    trade_id=old_trade.id,
+                    prop_firm_id=association.prop_firm_id
+                    ).first()
+
+                if old_associations:
+                    prop_firm.trading.cancel_trade(old_associations.platform_id)
+                    old_associations.delete()
+
             # If association exists, use the label when placing the trade
             outcome = prop_firm.trading.place_trade(trade, label=association.label)
             if outcome['success']:
-                prop_firm.trades.append(trade)
+                # Add trade to prop firm with platform ID
+                stmt = prop_firm_trades.insert().values(
+                    prop_firm_id=prop_firm.id,
+                    trade_id=trade.id,
+                    platform_id=outcome['details']['request_id']
+                )
+                db.session.execute(stmt)
+                
                 prop_firm.update_available_balance(trade)
                 print(f"Trade {outcome} placed successfully")
             else:
                 print(f"Error placing trade {trade.id}: {outcome['message']}")
+    
     db.session.commit()
     return trade
 

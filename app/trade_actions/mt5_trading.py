@@ -45,6 +45,32 @@ class MT5Trading(TradingInterface):
             self.connected = False
             return False
 
+    def cancel_trade(self, request_id: int) -> Dict[str, Any]:
+        """
+        Cancel a trade on MT5
+        """
+        try:
+            result = mt5.order_cancel(request_id)
+            if result.retcode != mt5.TRADE_RETCODE_DONE:
+                return {
+                    'success': False,
+                    'message': f"Error canceling trade: {result.comment}"
+                }
+            return {
+                'success': True,
+                'message': 'Trade canceled successfully',
+                'details': {
+                    'retcode': result.retcode,
+                    'result': result
+                }
+            }
+        except Exception as e:
+            logger.error(f"Error canceling trade: {e}")
+            return {
+                'success': False,
+                'message': f"Error canceling trade: {str(e)}"
+            }
+
     def place_trade(self, trade: 'Trade', label: str) -> Dict[str, Any]:
         """
         Place trade on MT5
@@ -59,7 +85,7 @@ class MT5Trading(TradingInterface):
                 'take_profit': float (optional),
                 'comment': str (optional)
             }
-        """
+        """           
         if not self.connected:
             # try to reconnect and in case of failure return the error
             self.connected = False
@@ -71,10 +97,10 @@ class MT5Trading(TradingInterface):
                 "symbol": label,
                 "volume": max(float(int(trade.contracts)), 0.1),
                 "type": mt5.ORDER_TYPE_BUY if trade.order_type.upper() == 'BUY' else mt5.ORDER_TYPE_SELL,
-                "price": mt5.symbol_info_tick(label).ask,
+                "price": mt5.symbol_info_tick(label).ask if trade.order_type.upper() == 'BUY' else mt5.symbol_info_tick(label).bid,
                 "deviation": max(int(trade.position_size), 20),
                 "magic": 234000,
-                "comment": str(trade.id),
+                "comment": f'{trade.strategy} - {trade.ticker}',
                 "type_time": mt5.ORDER_TIME_GTC,
                 "type_filling": mt5.ORDER_FILLING_RETURN,
             }
@@ -84,7 +110,7 @@ class MT5Trading(TradingInterface):
             # if trade.get('take_profit'):
             #     request["tp"] = float(trade['take_profit'])
             # Send trade request
-            result = mt5.order_send(request)
+            result, buy_request = mt5.order_send(request)
             if not result or result.retcode != mt5.TRADE_RETCODE_DONE:
                 return {
                     'success': False,
@@ -104,6 +130,7 @@ class MT5Trading(TradingInterface):
                     'volume': result.volume,
                     'price': result.price,
                     'request_id': result.request_id,
+                    'buy_request': buy_request
                 }
             }
         except Exception as e:
