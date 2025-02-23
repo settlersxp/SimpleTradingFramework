@@ -50,20 +50,23 @@ def add_trade_associations(mt_string, create_trade=True):
         return trade
 
     # Add trade to prop firms that have this trade pair associated
-    prop_firms = db.session.query(PropFirm).all()
-    for prop_firm in prop_firms:
-        # Check if this prop firm has this trade pair associated
+    prop_firms_with_associations = db.session.query(PropFirm).join(
+        PropFirmTradePairAssociation
+    ).filter(
+        PropFirmTradePairAssociation.trade_pair_id == trade_pair.id
+    ).all()
+
+    for prop_firm in prop_firms_with_associations:
+        # Now we can directly use prop_firm as it has the association
+        if trade.position_size == 0:
+            cancel_trade(trade, prop_firm, prop_firm)
+            return
+        
+        # From PropFirmTradePairAssociation get the label
         association = db.session.query(PropFirmTradePairAssociation).filter_by(
             prop_firm_id=prop_firm.id,
             trade_pair_id=trade_pair.id
         ).first()
-
-        if not association:
-            return
-
-        if trade.position_size < 0:
-            cancel_trade(trade, association, prop_firm)
-            return
 
         # If association exists, use the label when placing the trade
         outcome = prop_firm.trading.place_trade(trade, label=association.label)
