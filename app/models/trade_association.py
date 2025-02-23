@@ -15,7 +15,8 @@ prop_firm_trades = db.Table(
         db.Integer,
         db.ForeignKey('trades.id'),
         primary_key=True),
-    db.Column('platform_id', db.Integer, nullable=True)  # New column for MT5 trade ID
+    db.Column('platform_id', db.Integer, nullable=True),
+    db.Column('response', db.JSON, nullable=True)  # New column for MT5 trade ID
 )
 
 

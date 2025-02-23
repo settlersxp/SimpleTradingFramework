@@ -8,6 +8,32 @@ from app import db
 
 bp = Blueprint('trades_association', __name__)
 
+@staticmethod
+def cancel_trade(trade, association, prop_firm):
+    # find the trade in the trades table
+    # get all the associated prop firm trade pair associations
+    # get the platform id from the association
+    old_trade = db.session.query(Trade).filter_by(
+        order_type=trade.order_type,
+        ticker=trade.ticker,
+        strategy=trade.strategy,
+        position_size=trade.position_size,
+        ).first()
+
+    if not old_trade:
+        return
+
+    old_associations = db.session.query(prop_firm_trades).filter_by(
+        trade_id=old_trade.id,
+        prop_firm_id=association.prop_firm_id
+        ).first()
+
+    if not old_associations:
+        return
+
+    prop_firm.trading.cancel_trade(old_trade)
+    old_associations.delete()
+
 
 @staticmethod
 def add_trade_associations(mt_string, create_trade=True):
@@ -32,45 +58,30 @@ def add_trade_associations(mt_string, create_trade=True):
             trade_pair_id=trade_pair.id
         ).first()
 
-        if association:
-            if trade.position_size < 0:
-                # find the trade in the trades table
-                # get all the associated prop firm trade pair associations
-                # get the platform id from the association
-                old_trade = db.session.query(Trade).filter_by(
-                    order_type=trade.order_type,
-                    ticker=trade.ticker,
-                    strategy=trade.strategy,
-                    position_size=trade.position_size,
-                    ).first()
-                
-                if not old_trade:
-                    return trade
-                
-                old_associations = db.session.query(prop_firm_trades).filter_by(
-                    trade_id=old_trade.id,
-                    prop_firm_id=association.prop_firm_id
-                    ).first()
+        if not association:
+            return
 
-                if old_associations:
-                    prop_firm.trading.cancel_trade(old_associations.platform_id)
-                    old_associations.delete()
+        if trade.position_size < 0:
+            cancel_trade(trade, association, prop_firm)
+            return
 
-            # If association exists, use the label when placing the trade
-            outcome = prop_firm.trading.place_trade(trade, label=association.label)
-            if outcome['success']:
-                # Add trade to prop firm with platform ID
-                stmt = prop_firm_trades.insert().values(
-                    prop_firm_id=prop_firm.id,
-                    trade_id=trade.id,
-                    platform_id=outcome['details']['request_id']
-                )
-                db.session.execute(stmt)
-                
-                prop_firm.update_available_balance(trade)
-                print(f"Trade {outcome} placed successfully")
-            else:
-                print(f"Error placing trade {trade.id}: {outcome['message']}")
+        # If association exists, use the label when placing the trade
+        outcome = prop_firm.trading.place_trade(trade, label=association.label)
+        if outcome['success']:
+            outcome['details']['buy_request']['request_id'] = outcome['details']['request_id']
+            # Add trade to prop firm with platform ID
+            stmt = prop_firm_trades.insert().values(
+                prop_firm_id=prop_firm.id,
+                trade_id=trade.id,
+                platform_id=outcome['details']['request_id'],
+                response=outcome['details']['response']
+            )
+            db.session.execute(stmt)
+            
+            prop_firm.update_available_balance(trade)
+            print(f"Trade {outcome} placed successfully")
+        else:
+            print(f"Error placing trade {trade.id}: {outcome['message']}")
     
     db.session.commit()
     return trade

@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 class MT5Trading(TradingInterface):
     def __init__(self):
         self.credentials = None
@@ -45,12 +46,12 @@ class MT5Trading(TradingInterface):
             self.connected = False
             return False
 
-    def cancel_trade(self, request_id: int) -> Dict[str, Any]:
+    def cancel_trade(self, old_trade: 'Trade') -> Dict[str, Any]:
         """
         Cancel a trade on MT5
         """
         try:
-            result = mt5.order_cancel(request_id)
+            result = mt5.order_send(old_trade.response)
             if result.retcode != mt5.TRADE_RETCODE_DONE:
                 return {
                     'success': False,
@@ -100,7 +101,6 @@ class MT5Trading(TradingInterface):
                 "price": mt5.symbol_info_tick(label).ask if trade.order_type.upper() == 'BUY' else mt5.symbol_info_tick(label).bid,
                 "deviation": max(int(trade.position_size), 20),
                 "magic": 234000,
-                "comment": f'{trade.strategy} - {trade.ticker}',
                 "type_time": mt5.ORDER_TIME_GTC,
                 "type_filling": mt5.ORDER_FILLING_RETURN,
             }
@@ -110,8 +110,18 @@ class MT5Trading(TradingInterface):
             # if trade.get('take_profit'):
             #     request["tp"] = float(trade['take_profit'])
             # Send trade request
-            result, buy_request = mt5.order_send(request)
-            if not result or result.retcode != mt5.TRADE_RETCODE_DONE:
+            result = mt5.order_send(request)
+            if result.retcode == mt5.TRADE_RETCODE_MARKET_CLOSED:
+                return {
+                    'success': False,
+                    'message': 'Market is closed',
+                    'trade_id': None,
+                    'details': {
+                        'retcode': result.retcode,
+                        'comment': result.comment
+                    }
+                }
+            elif not result or result.retcode != mt5.TRADE_RETCODE_DONE:
                 return {
                     'success': False,
                     'message': f"Order failed: {result.comment}",
@@ -130,7 +140,8 @@ class MT5Trading(TradingInterface):
                     'volume': result.volume,
                     'price': result.price,
                     'request_id': result.request_id,
-                    'buy_request': buy_request
+                    'buy_request': request,
+                    'response': result
                 }
             }
         except Exception as e:
