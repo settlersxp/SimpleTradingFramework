@@ -8,17 +8,25 @@ from app import db
 
 bp = Blueprint('trades_association', __name__)
 
+
 @staticmethod
 def cancel_trade(trade, association, prop_firm):
-    # find the trade in the trades table
-    # get all the associated prop firm trade pair associations
-    # get the platform id from the association
+    """Cancel a trade and remove its association with a prop firm.
+
+    Args:
+        trade (Trade): The trade to cancel.
+        association: The association object linking the prop firm and trade pair.
+        prop_firm (PropFirm): The prop firm associated with the trade.
+    """
+    # Find the trade in the trades table
+    # Get all the associated prop firm trade pair associations
+    # Get the platform id from the association
     old_trade = db.session.query(Trade).filter_by(
         order_type=trade.order_type,
         ticker=trade.ticker,
         strategy=trade.strategy,
         position_size=trade.position_size,
-        ).first()
+    ).first()
 
     if not old_trade:
         return
@@ -26,7 +34,7 @@ def cancel_trade(trade, association, prop_firm):
     old_associations = db.session.query(prop_firm_trades).filter_by(
         trade_id=old_trade.id,
         prop_firm_id=association.prop_firm_id
-        ).first()
+    ).first()
 
     if not old_associations:
         return
@@ -37,14 +45,24 @@ def cancel_trade(trade, association, prop_firm):
 
 @staticmethod
 def add_trade_associations(mt_string, create_trade=True):
+    """Add trade associations based on the provided MT string.
+
+    Args:
+        mt_string (str): The MT string containing trade information.
+        create_trade (bool): Flag indicating whether to create a new trade.
+
+    Returns:
+        Trade: The created or updated trade object.
+    """
     trade = Trade.from_mt_string(mt_string)
-    
+
     if create_trade:
         db.session.add(trade)
         db.session.commit()
 
     # Check if the trade's ticker exists in trade_pairs
-    trade_pair = db.session.query(TradePairs).filter_by(name=trade.ticker).first()
+    trade_pair = db.session.query(
+        TradePairs).filter_by(name=trade.ticker).first()
     if not trade_pair:
         # If ticker is not tracked, skip prop firm associations
         return trade
@@ -61,7 +79,7 @@ def add_trade_associations(mt_string, create_trade=True):
         if trade.position_size == 0:
             cancel_trade(trade, prop_firm, prop_firm)
             return
-        
+
         # From PropFirmTradePairAssociation get the label
         association = db.session.query(PropFirmTradePairAssociation).filter_by(
             prop_firm_id=prop_firm.id,
@@ -80,18 +98,27 @@ def add_trade_associations(mt_string, create_trade=True):
                 response=outcome['details']['response']
             )
             db.session.execute(stmt)
-            
+
             prop_firm.update_available_balance(trade)
             print(f"Trade {outcome} placed successfully")
         else:
             print(f"Error placing trade {trade.id}: {outcome['message']}")
-    
+
     db.session.commit()
     return trade
 
 
 @bp.route('/', methods=['GET', 'POST', 'PUT'])
 def trades_association():
+    """Handle GET, POST, and PUT requests for trade associations.
+
+    GET: Retrieve all trades associated with prop firms.
+    POST: Create new trade associations from the provided data.
+    PUT: Update existing trade associations based on the provided JSON data.
+
+    Returns:
+        JSON response containing trade association data or status messages.
+    """
     if request.method == 'GET':
         # Query trades through prop_firm_trades association table
         trades_with_firms = db.session.query(Trade, PropFirm)\
@@ -103,12 +130,12 @@ def trades_association():
 
         # Format the response to include both trade and prop firm info
         return jsonify([{
-                **trade.to_dict(),
-                "prop_firm": {
-                    "id": prop_firm.id,
-                    "name": prop_firm.name
-                }
-            } for trade, prop_firm in trades_with_firms])
+            **trade.to_dict(),
+            "prop_firm": {
+                "id": prop_firm.id,
+                "name": prop_firm.name
+            }
+        } for trade, prop_firm in trades_with_firms])
     elif request.method == 'POST':
         try:
             mt_string = request.get_data(as_text=True)
@@ -126,10 +153,11 @@ def trades_association():
     elif request.method == 'PUT':
         try:
             data = request.get_json()
-            
+
             # Extract data from request
             strategy = data.get('strategy')
-            order_type = data.get('order')  # Note: 'order' in request maps to 'order_type' in model
+            # Note: 'order' in request maps to 'order_type' in model
+            order_type = data.get('order')
             contracts = float(data.get('contracts'))
             ticker = data.get('ticker')
             position_size = float(data.get('position_size'))

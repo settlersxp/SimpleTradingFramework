@@ -5,11 +5,20 @@ from app.models.prop_firm import PropFirm
 from app.models.trade_association import prop_firm_trades
 from app import db
 
+# Create a Blueprint for the trades routes
 bp = Blueprint('trades', __name__, url_prefix='/trades')
 
 
 @bp.route('/<int:trade_id>', methods=['GET'])
 def get_trade(trade_id):
+    """Retrieve a specific trade by its ID.
+
+    Args:
+        trade_id (int): The ID of the trade to retrieve.
+
+    Returns:
+        JSON response containing the trade data or an error message if not found.
+    """
     trade = db.session.get(Trade, trade_id)
     if not trade:
         return jsonify({"error": "Trade not found"}), 404
@@ -18,6 +27,14 @@ def get_trade(trade_id):
 
 @bp.route('/', methods=['GET', 'POST'])
 def trades():
+    """Handle GET and POST requests for trades.
+
+    GET: Retrieve all trades, ordered by ID in descending order.
+    POST: Create a new trade association from the request data.
+
+    Returns:
+        JSON response containing the list of trades or the status of the trade creation.
+    """
     if request.method == 'GET':
         trades = db.session.query(Trade).order_by(Trade.id.desc()).all()
         return jsonify({
@@ -40,6 +57,11 @@ def trades():
 
 @bp.route('/view')
 def view_trades():
+    """View trades along with their associated prop firms.
+
+    Returns:
+        Rendered HTML template displaying trades with their associated prop firms.
+    """
     trades_with_firms = db.session.query(Trade, PropFirm)\
         .select_from(Trade)\
         .join(prop_firm_trades, Trade.id == prop_firm_trades.c.trade_id)\
@@ -51,12 +73,18 @@ def view_trades():
 
 @bp.route('/trades_associations', methods=['PUT'])
 def update_trades_associations():
+    """Update existing trade associations based on the provided JSON data.
+
+    Returns:
+        JSON response indicating the status of the update operation.
+    """
     try:
         data = request.get_json()
-        
+
         # Extract data from request
         strategy = data.get('strategy')
-        order_type = data.get('order')  # Note: 'order' in request maps to 'order_type' in model
+        # Note: 'order' in request maps to 'order_type' in model
+        order_type = data.get('order')
         contracts = float(data.get('contracts'))
         ticker = data.get('ticker')
         position_size = float(data.get('position_size'))
@@ -92,12 +120,25 @@ def update_trades_associations():
 
 @bp.route('/list', methods=['GET'])
 def list_trades():
+    """List all trades ordered by creation date.
+
+    Returns:
+        Rendered HTML template displaying the list of trades.
+    """
     trades = Trade.query.order_by(Trade.created_at.desc()).all()
     return render_template('trades/list.html', trades=trades)
 
 
 @bp.route('/<int:trade_id>', methods=['DELETE'])
 def delete_trade(trade_id):
+    """Delete a specific trade by its ID.
+
+    Args:
+        trade_id (int): The ID of the trade to delete.
+
+    Returns:
+        JSON response indicating the status of the deletion operation.
+    """
     try:
         trade = Trade.query.get_or_404(trade_id)
         db.session.delete(trade)
@@ -110,9 +151,17 @@ def delete_trade(trade_id):
 
 @bp.route('/<int:trade_id>/replay', methods=['POST'])
 def replay_trade(trade_id):
+    """Replay a specific trade by its ID.
+
+    Args:
+        trade_id (int): The ID of the trade to replay.
+
+    Returns:
+        JSON response indicating the status of the replay operation.
+    """
     try:
         trade = Trade.query.get_or_404(trade_id)
-        
+
         # Convert trade to MT string format
         mt_string = (
             f'"strategy":"{trade.strategy}", '
@@ -121,10 +170,10 @@ def replay_trade(trade_id):
             f'"ticker":"{trade.ticker}", '
             f'"position_size":"{trade.position_size}"'
         )
-        
+
         # Use the existing add_trade_associations function but without creating a new trade
         add_trade_associations(mt_string, create_trade=False)
-        
+
         return jsonify({
             "status": "success",
             "message": "Trade replayed successfully"
