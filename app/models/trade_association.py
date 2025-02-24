@@ -30,11 +30,11 @@ class TradeAssociation:
         Associates a trade with all existing prop firms
         """
         from app.models.prop_firm import PropFirm  # Import here to avoid circular imports
-        
+
         prop_firms = PropFirm.query.all()
         for prop_firm in prop_firms:
             prop_firm.trades.append(trade)
             prop_firm.update_available_balance(trade)
-        
+
         db.session.commit()
         return trade

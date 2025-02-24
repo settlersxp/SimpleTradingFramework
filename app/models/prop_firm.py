@@ -1,4 +1,4 @@
-from app import db
+from app import db, TimezoneAwareModel
 from datetime import datetime
 from app.models.trade import Trade
 import importlib
@@ -6,7 +6,7 @@ from typing import Optional, ClassVar
 from app.trade_actions.trade_interface import TradingInterface
 
 
-class PropFirm(db.Model):
+class PropFirm(TimezoneAwareModel):
     __tablename__ = 'prop_firms'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -92,7 +92,7 @@ class PropFirm(db.Model):
         return {
             'id': self.id,
             'name': self.name,
-            'created_at': self.created_at.isoformat(),
+            'created_at': self.get_datetime_in_timezone(self.created_at).strftime('%Y-%m-%d %H:%M:%S %z'),
             'full_balance': self.full_balance,
             'available_balance': self.available_balance,
             'dowdown_percentage': self.dowdown_percentage,
