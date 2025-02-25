@@ -54,17 +54,19 @@ class MT5Trading(TradingInterface):
             self.connected = False
             return False
 
-    def cancel_trade(self, old_trade: 'Trade') -> Dict[str, Any]:
+    def cancel_trade(self, old_trade: 'Trade') -> ExecuteTradeReturn:
         """
         Cancel a trade on MT5
         """
         try:
             result = mt5.order_send(old_trade.response)
             if result.retcode != mt5.TRADE_RETCODE_DONE:
-                return {
-                    'success': False,
-                    'message': f"Error canceling trade: {result.comment}"
-                }
+                return ExecuteTradeReturn(
+                    success=False,
+                    message=f"Error canceling trade: {result.comment}",
+                    trade_id=None,
+                    details={}
+                )
             return ExecuteTradeReturn(
                 success=True,
                 message='Trade canceled successfully',
@@ -81,7 +83,7 @@ class MT5Trading(TradingInterface):
                 message=f"Error canceling trade: {str(e)}"
             )
 
-    def place_trade(self, trade: 'Trade', label: str) -> Dict[str, Any]:
+    def place_trade(self, trade: 'Trade', label: str) -> ExecuteTradeReturn:
         """
         Place trade on MT5 with queue system
 
@@ -120,7 +122,7 @@ class MT5Trading(TradingInterface):
             # If not in cooldown, execute the trade immediately
             result = self._execute_trade(trade, label)
 
-            if result['success']:
+            if result.success:
                 self.last_trade_time = current_time
 
             return result
@@ -154,7 +156,7 @@ class MT5Trading(TradingInterface):
             else:
                 self.processing_timer = None
 
-    def _execute_trade(self, trade: 'Trade', label: str) -> Dict[str, Any]:
+    def _execute_trade(self, trade: 'Trade', label: str) -> ExecuteTradeReturn:
         """Execute a trade with MT5"""
         if not self.connected:
             # try to reconnect and in case of failure return the error
@@ -202,13 +204,13 @@ class MT5Trading(TradingInterface):
             request = {
                 "action": mt5.TRADE_ACTION_DEAL,
                 "symbol": label,
-                "volume": max(float(int(trade.contracts)), 0.1),
+                "volume": max(trade.contracts, 0.1),
                 "type": order_type,
                 "price": price,
                 "deviation": max(int(trade.position_size), 20),
                 "magic": 234000,
                 "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_RETURN,
+                "type_filling": mt5.ORDER_FILLING_BOC
             }
 
             # Add optional parameters if provided

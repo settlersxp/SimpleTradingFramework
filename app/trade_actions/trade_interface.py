@@ -3,6 +3,7 @@ from typing import Dict, Any
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from app.models.execute_trade_return import ExecuteTradeReturn
     from app.models.trade import Trade
 
 class TradingInterface(ABC):
@@ -23,7 +24,7 @@ class TradingInterface(ABC):
         pass
 
     @abstractmethod
-    def place_trade(self, trade: 'Trade', label: str) -> Dict[str, Any]:
+    def place_trade(self, trade: 'Trade', label: str) -> 'ExecuteTradeReturn':
         """
         Place a trade on the platform
 
@@ -33,13 +34,7 @@ class TradingInterface(ABC):
             label (str): Label for the trade symbol specific to the prop firm
 
         Returns:
-            dict: Response containing trade status and details
-                 {
-                     'success': bool,
-                     'trade_id': str,
-                     'message': str,
-                     'details': dict
-                 }
+            ExecuteTradeReturn
         """
         pass
 

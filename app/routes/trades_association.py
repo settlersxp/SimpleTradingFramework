@@ -5,6 +5,7 @@ from app.models.trade_association import prop_firm_trades
 from app.models.trade_pairs import TradePairs
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app import db
+import json
 
 bp = Blueprint('trades_association', __name__)
 
@@ -88,21 +89,20 @@ def add_trade_associations(mt_string, create_trade=True):
 
         # If association exists, use the label when placing the trade
         outcome = prop_firm.trading.place_trade(trade, label=association.label)
-        if outcome['success']:
-            outcome['details']['buy_request']['request_id'] = outcome['details']['request_id']
+        if outcome.success:
             # Add trade to prop firm with platform ID
             stmt = prop_firm_trades.insert().values(
                 prop_firm_id=prop_firm.id,
                 trade_id=trade.id,
-                platform_id=outcome['details']['request_id'],
-                response=outcome['details']['response']
+                platform_id=outcome.details['request_id'],
+                response=json.dumps(outcome.details['response'])
             )
             db.session.execute(stmt)
 
             prop_firm.update_available_balance(trade)
-            print(f"Trade {outcome} placed successfully")
+            print(f"Trade {outcome.details['request_id']} placed successfully")
         else:
-            print(f"Error placing trade {trade.id}: {outcome['message']}")
+            print(f"Error placing trade {trade.id}: {outcome.message}")
 
     db.session.commit()
     return trade
