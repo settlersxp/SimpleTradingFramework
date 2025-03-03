@@ -59,8 +59,11 @@ class MT5Trading(TradingInterface):
         Cancel a trade on MT5
         """
         try:
-            result = mt5.order_send(old_trade_response)
-            if result.retcode != mt5.TRADE_RETCODE_DONE:
+            result = mt5.Close(
+                symbol=old_trade_response[10][3],
+                ticket=old_trade_response[2]
+            )
+            if not result:
                 return ExecuteTradeReturn(
                     success=False,
                     message=f"Error canceling trade: {result.comment}",
@@ -69,10 +72,10 @@ class MT5Trading(TradingInterface):
                 )
             return ExecuteTradeReturn(
                 success=True,
-                message='Trade canceled successfully',
+                message=f'Trade canceled successfully {old_trade_response[10][3]} {old_trade_response[2]}',
                 trade_id=None,
                 details={
-                    'retcode': result.retcode,
+                    'retcode': result,
                     'result': result
                 }
             )
