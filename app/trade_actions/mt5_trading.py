@@ -54,12 +54,12 @@ class MT5Trading(TradingInterface):
             self.connected = False
             return False
 
-    def cancel_trade(self, old_trade: 'Trade') -> ExecuteTradeReturn:
+    def cancel_trade(self, old_trade_response: 'JSON') -> ExecuteTradeReturn:
         """
         Cancel a trade on MT5
         """
         try:
-            result = mt5.order_send(old_trade.response)
+            result = mt5.order_send(old_trade_response)
             if result.retcode != mt5.TRADE_RETCODE_DONE:
                 return ExecuteTradeReturn(
                     success=False,
@@ -80,7 +80,11 @@ class MT5Trading(TradingInterface):
             logger.error(f"Error canceling trade: {e}")
             return ExecuteTradeReturn(
                 success=False,
-                message=f"Error canceling trade: {str(e)}"
+                message=f"Tried to close trade but failed with error: {str(e)}",
+                trade_id=old_trade_response[2],
+                details={
+                    'result': mt5.last_error()
+                    }
             )
 
     def place_trade(self, trade: 'Trade', label: str) -> ExecuteTradeReturn:

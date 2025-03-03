@@ -161,7 +161,7 @@ def replay_trade(trade_id):
     """
     try:
         trade = Trade.query.get_or_404(trade_id)
-
+        
         # Convert trade to MT string format
         mt_string = (
             f'"strategy":"{trade.strategy}", '
@@ -170,10 +170,10 @@ def replay_trade(trade_id):
             f'"ticker":"{trade.ticker}", '
             f'"position_size":"{trade.position_size}"'
         )
-
+        
         # Use the existing add_trade_associations function but without creating a new trade
         add_trade_associations(mt_string, create_trade=False)
-
+        
         return jsonify({
             "status": "success",
             "message": "Trade replayed successfully"
@@ -183,3 +183,30 @@ def replay_trade(trade_id):
             "status": "error",
             "message": str(e)
         }), 500
+
+
+@bp.route('/close', methods=['GET'])
+def close_trade():
+    """Close a specific trade identified by trade_id query parameter.
+
+    Returns:
+        JSON response indicating the status of the close operation.
+    """
+    try:
+        trade_id = request.args.get('trade_id')
+        trade = Trade.query.get_or_404(trade_id)
+        
+        # Convert trade to MT string format with close order
+        mt_string = (
+            f'"strategy":"{trade.strategy}", '
+            f'"order":"{trade.order_type}", '
+            f'"contracts":"{trade.contracts}", '
+            f'"ticker":"{trade.ticker}", '
+            f'"position_size":"{trade.position_size}"'
+        )
+        
+        add_trade_associations(mt_string, create_trade=False)
+        
+        return jsonify({'message': 'Trade closed successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

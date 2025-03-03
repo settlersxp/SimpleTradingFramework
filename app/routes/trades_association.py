@@ -23,10 +23,10 @@ def cancel_trade(trade, association, prop_firm):
     # Get all the associated prop firm trade pair associations
     # Get the platform id from the association
     old_trade = db.session.query(Trade).filter_by(
-        order_type=trade.order_type,
+        order_type='buy' if trade.order_type == 'sell' else 'sell',
         ticker=trade.ticker,
         strategy=trade.strategy,
-        position_size=trade.position_size,
+        contracts=trade.contracts,
     ).first()
 
     if not old_trade:
@@ -40,8 +40,11 @@ def cancel_trade(trade, association, prop_firm):
     if not old_associations:
         return
 
-    prop_firm.trading.cancel_trade(old_trade)
-    old_associations.delete()
+    outcome = prop_firm.trading.cancel_trade(json.loads(old_associations.response))
+    if outcome.success:
+        old_associations.delete()
+    else:
+        print(f"Error canceling trade {old_trade.id}: {outcome.message}")
 
 
 @staticmethod
@@ -76,16 +79,16 @@ def add_trade_associations(mt_string, create_trade=True):
     ).all()
 
     for prop_firm in prop_firms_with_associations:
-        # Now we can directly use prop_firm as it has the association
-        if trade.position_size == 0:
-            cancel_trade(trade, prop_firm, prop_firm)
-            return
-
         # From PropFirmTradePairAssociation get the label
         association = db.session.query(PropFirmTradePairAssociation).filter_by(
             prop_firm_id=prop_firm.id,
             trade_pair_id=trade_pair.id
         ).first()
+
+                # Now we can directly use prop_firm as it has the association
+        if trade.position_size == 0:
+            cancel_trade(trade, association, prop_firm)
+            return
 
         # If association exists, use the label when placing the trade
         outcome = prop_firm.trading.place_trade(trade, label=association.label)
@@ -106,6 +109,7 @@ def add_trade_associations(mt_string, create_trade=True):
 
     db.session.commit()
     return trade
+
 
 
 @bp.route('/', methods=['GET', 'POST', 'PUT'])
