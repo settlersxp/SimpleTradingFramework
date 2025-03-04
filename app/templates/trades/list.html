@@ -16,6 +16,7 @@
                     <th>Ticker</th>
                     <th>Position Size</th>
                     <th>Created At</th>
+                    <th>Mt5 id</th>
                 </tr>
             </thead>
             <tbody>
@@ -41,7 +42,12 @@
                     <td>{{ trade.contracts }}</td>
                     <td>{{ trade.ticker }}</td>
                     <td>{{ trade.position_size }}</td>
-                    <td>{{ trade.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ trade.created_at }}</td>
+                    <td>
+                        {% if trade.response %}
+                        {{ trade.response[2] }}
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

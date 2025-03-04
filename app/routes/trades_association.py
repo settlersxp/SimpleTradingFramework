@@ -39,10 +39,12 @@ def cancel_trade(trade, association, prop_firm):
 
     if not old_associations:
         return
-
-    outcome = prop_firm.trading.cancel_trade(json.loads(old_associations.response))
+    old_trade_response = json.loads(old_associations.response)
+    outcome = prop_firm.trading.cancel_trade(old_trade_response)
     if outcome.success:
         old_associations.delete()
+        Trade.query.filter_by(id=old_trade.id).delete()
+        print(f"Trade {old_trade.id} canceled successfully")
     else:
         print(f"Error canceling trade {old_trade.id}: {outcome.message}")
 

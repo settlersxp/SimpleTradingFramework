@@ -4,6 +4,7 @@ from app.routes.trades_association import add_trade_associations
 from app.models.prop_firm import PropFirm
 from app.models.trade_association import PropFirmTrades
 from app import db
+import json
 
 # Create a Blueprint for the trades routes
 bp = Blueprint('trades', __name__, url_prefix='/trades')
@@ -73,13 +74,26 @@ def view_trades():
 
 @bp.route('/list', methods=['GET'])
 def list_trades():
-    """List all trades ordered by creation date.
+    """List all trades ordered by creation date with their prop firm details.
 
     Returns:
         Rendered HTML template displaying the list of trades.
     """
-    trades = Trade.query.order_by(Trade.created_at.desc()).all()
-    return render_template('trades/list.html', trades=trades)
+    trades = db.session.query(Trade, prop_firm_trades.c.response)\
+        .join(prop_firm_trades)\
+        .order_by(Trade.created_at.desc())\
+        .all()
+    
+    trades_with_response = []
+    for trade, response in trades:
+        trade_dict = trade.to_dict()
+        if response:
+            trade_dict['response'] = json.loads(response)
+        else:
+            trade_dict['response'] = None
+        trades_with_response.append(trade_dict)
+    
+    return render_template('trades/list.html', trades=trades_with_response)
 
 
 @bp.route('/<int:trade_id>', methods=['DELETE'])

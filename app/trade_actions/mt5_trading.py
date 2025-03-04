@@ -64,15 +64,19 @@ class MT5Trading(TradingInterface):
                 ticket=old_trade_response[2]
             )
             if not result:
+                error_message = f"Error canceling trade: {old_trade_response[10][3]} - {old_trade_response[2]}"
+                print(error_message)
                 return ExecuteTradeReturn(
                     success=False,
-                    message=f"Error canceling trade: {result.comment}",
+                    message=error_message,
                     trade_id=None,
                     details={}
                 )
+            success_message = f"Trade canceled successfully {old_trade_response[10][3]} {old_trade_response[2]}"
+            print(success_message)
             return ExecuteTradeReturn(
                 success=True,
-                message=f'Trade canceled successfully {old_trade_response[10][3]} {old_trade_response[2]}',
+                message=success_message,
                 trade_id=None,
                 details={
                     'retcode': result,
