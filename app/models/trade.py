@@ -18,6 +18,12 @@ class Trade(TimezoneAwareModel):
     position_size = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Define the relationship with PropFirmTrades
+    prop_firm_associations = db.relationship("PropFirmTrades", back_populates="trade")
+    
+    # Define a relationship to access prop firms directly
+    prop_firms = db.relationship("PropFirm", secondary="prop_firm_trades", viewonly=True)
+
     def to_dict(self):
         """
         Convert the Trade model to a dictionary
@@ -83,7 +89,7 @@ class Trade(TimezoneAwareModel):
 
         for trade in matching_trades:
             # if the future dowdown_percentage is greater than 4% skip the trade
-            for prop_firm in trade.prop_firm:
+            for prop_firm in trade.prop_firms:
                 prop_firm.update_available_balance(trade)
                 if prop_firm.dowdown_percentage > 1.04:
                     continue

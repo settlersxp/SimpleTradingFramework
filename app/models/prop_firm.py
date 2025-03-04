@@ -8,7 +8,7 @@ from app.trade_actions.trade_interface import TradingInterface
 
 class PropFirm(TimezoneAwareModel):
     __tablename__ = 'prop_firms'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -23,13 +23,10 @@ class PropFirm(TimezoneAwareModel):
     platform_type = db.Column(db.String(100), nullable=True)
 
     # One to many relationship with trades in a different association table
-    trades = db.relationship('Trade',
-                            secondary='prop_firm_trades',
-                            backref=db.backref('prop_firms', lazy='dynamic'),
-                            lazy='dynamic')
+    trade_associations = db.relationship("PropFirmTrades", back_populates="prop_firm")
 
     _trading_instance: ClassVar[Optional[TradingInterface]] = None
-    
+
     @property
     def trading(self) -> Optional[TradingInterface]:
         """Get or create trading instance based on platform_type"""
@@ -37,13 +34,14 @@ class PropFirm(TimezoneAwareModel):
             # Convert platform type to module name (e.g., 'MT5' -> 'mt5_trading')
             module_name = f"{self.platform_type.lower()}_trading"
             # Import the module
-            module = importlib.import_module(f"app.trade_actions.{module_name}")
+            module = importlib.import_module(
+                f"app.trade_actions.{module_name}")
             # Get the class (assumes class name is platform type + 'Trading')
             class_name = f"{self.platform_type.upper()}Trading"
             trading_class = getattr(module, class_name)
             # Create instance
             self._trading_instance = trading_class()
-            
+
             # Try to connect if we have credentials
             if all([self.username, self.password, self.ip_address]):
                 self._trading_instance.connect({
@@ -51,13 +49,13 @@ class PropFirm(TimezoneAwareModel):
                     'password': self.password,
                     'server': f"{self.ip_address}"
                 })
-            
+
             self._trading_instance.credentials = {
                 'username': self.username,
                 'password': self.password,
                 'server': f"{self.ip_address}"
             }
-                
+
         return self._trading_instance
 
     def is_connected(self) -> bool:
@@ -78,7 +76,7 @@ class PropFirm(TimezoneAwareModel):
     def update_available_balance_on_delete(self, trade: Trade):
         self.available_balance += abs(trade.position_size)
         self.update_dowdown_percentage()
-    
+
     # every time the prop firm's available balance is updated, the downdraft percentage should be updated
     def update_dowdown_percentage(self):
         self.dowdown_percentage = self.full_balance/self.available_balance
@@ -114,7 +112,7 @@ class PropFirm(TimezoneAwareModel):
 
             if name.startswith('_'):
                 continue
-            
+
             if name == 'id':
                 continue
 

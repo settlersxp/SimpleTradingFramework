@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, render_template
 from app.models.trade import Trade
 from app.routes.trades_association import add_trade_associations
 from app.models.prop_firm import PropFirm
-from app.models.trade_association import prop_firm_trades
+from app.models.trade_association import PropFirmTrades
 from app import db
 
 # Create a Blueprint for the trades routes
@@ -64,8 +64,8 @@ def view_trades():
     """
     trades_with_firms = db.session.query(Trade, PropFirm)\
         .select_from(Trade)\
-        .join(prop_firm_trades, Trade.id == prop_firm_trades.c.trade_id)\
-        .join(PropFirm, PropFirm.id == prop_firm_trades.c.prop_firm_id)\
+        .join(PropFirmTrades, Trade.id == PropFirmTrades.trade_id)\
+        .join(PropFirm, PropFirm.id == PropFirmTrades.prop_firm_id)\
         .order_by(Trade.id.desc())\
         .all()
     return render_template('trades/view_trades.html', trades_with_firms=trades_with_firms)

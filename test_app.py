@@ -258,7 +258,7 @@ class TestFlaskApp(unittest.TestCase):
         self.assertEqual(prop_firm_data['prop_firm']['available_balance'], expected_value)
 
 
-    def test_get_prop_firm_trades(self):
+    def test_get_PropFirmTrades(self):
         # initial number of trades
         response = self.client.get(f'/prop_firm/{self.prop_firm_id}/trades')
         data = response.get_json()

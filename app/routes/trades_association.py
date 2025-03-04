@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app.models.prop_firm import PropFirm
 from app.models.trade import Trade
-from app.models.trade_association import prop_firm_trades
+from app.models.trade_association import PropFirmTrades
 from app.models.trade_pairs import TradePairs
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app import db
@@ -32,7 +32,7 @@ def cancel_trade(trade, association, prop_firm):
     if not old_trade:
         return
 
-    old_associations = db.session.query(prop_firm_trades).filter_by(
+    old_associations = db.session.query(PropFirmTrades).filter_by(
         trade_id=old_trade.id,
         prop_firm_id=association.prop_firm_id
     ).first()
@@ -94,7 +94,7 @@ def add_trade_associations(mt_string, create_trade=True):
         outcome = prop_firm.trading.place_trade(trade, label=association.label)
         if outcome.success:
             # Add trade to prop firm with platform ID
-            stmt = prop_firm_trades.insert().values(
+            stmt = PropFirmTrades.insert().values(
                 prop_firm_id=prop_firm.id,
                 trade_id=trade.id,
                 platform_id=outcome.details['request_id'],
@@ -124,11 +124,11 @@ def trades_association():
         JSON response containing trade association data or status messages.
     """
     if request.method == 'GET':
-        # Query trades through prop_firm_trades association table
+        # Query trades through PropFirmTrades association table
         trades_with_firms = db.session.query(Trade, PropFirm)\
             .select_from(Trade)\
-            .join(prop_firm_trades, Trade.id == prop_firm_trades.c.trade_id)\
-            .join(PropFirm, PropFirm.id == prop_firm_trades.c.prop_firm_id)\
+            .join(PropFirmTrades, Trade.id == PropFirmTrades.c.trade_id)\
+            .join(PropFirm, PropFirm.id == PropFirmTrades.c.prop_firm_id)\
             .order_by(Trade.created_at.desc())\
             .all()
 
