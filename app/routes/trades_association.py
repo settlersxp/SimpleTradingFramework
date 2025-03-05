@@ -85,7 +85,7 @@ def add_trade_associations(mt_string, create_trade=True):
             trade_pair_id=trade_pair.id
         ).first()
 
-                # Now we can directly use prop_firm as it has the association
+        # Now we can directly use prop_firm as it has the association
         if trade.position_size == 0:
             cancel_trade(trade, association, prop_firm)
             return

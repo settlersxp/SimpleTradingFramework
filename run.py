@@ -98,25 +98,8 @@ class FlaskApp:
         # Register routes
         self.register_routes()
         
-        # Initialize database with migrations
-        try:
-            with self.app.app_context():
-                # Check if migrations directory exists
-                if os.path.exists('migrations'):
-                    logging.info("Running database migrations...")
-                    # Run all pending migrations
-                    upgrade()
-                    logging.info("Database migrations completed successfully")
-                else:
-                    logging.info("Creating database tables...")
-                    # If no migrations exist, create tables directly
-                    db.create_all()
-                    logging.warning("No migrations found. Created tables directly.")
-        except Exception as e:
-            logging.error(f"Error initializing database: {e}")
-            raise  # Re-raise the exception to see the full error
-        
         self._initialized = True
+    
     
     def register_middleware(self):
         @self.app.before_request

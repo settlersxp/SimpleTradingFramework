@@ -1,0 +1,16 @@
+---
+description: project structure
+globs: 
+alwaysApply: false
+---
+    - The server side is inside the /app folder
+    - The client side is inside the /frontend folder
+
+    # Server side:
+    - Uses Python and Flask
+    - Uses SQLAlchemy to interact with the database
+    - Uses Pytest to run tests
+
+    # Client side:
+    - Uses Svelte5
+    - Uses Tailwind CSS

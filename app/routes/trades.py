@@ -71,53 +71,6 @@ def view_trades():
     return render_template('trades/view_trades.html', trades_with_firms=trades_with_firms)
 
 
-@bp.route('/trades_associations', methods=['PUT'])
-def update_trades_associations():
-    """Update existing trade associations based on the provided JSON data.
-
-    Returns:
-        JSON response indicating the status of the update operation.
-    """
-    try:
-        data = request.get_json()
-
-        # Extract data from request
-        strategy = data.get('strategy')
-        # Note: 'order' in request maps to 'order_type' in model
-        order_type = data.get('order')
-        contracts = float(data.get('contracts'))
-        ticker = data.get('ticker')
-        position_size = float(data.get('position_size'))
-
-        # Update all matching trades
-        matching_trades = Trade.update_matching_trades(
-            strategy=strategy,
-            order_type=order_type,
-            contracts=contracts,
-            ticker=ticker,
-            position_size=position_size
-        )
-
-        if not matching_trades:
-            return jsonify({
-                "status": "warning",
-                "message": "No matching trades found"
-            }), 200
-
-        return jsonify({
-            "status": "success",
-            "message": f"Updated {len(matching_trades)} trades",
-            "updated_trades": [trade.id for trade in matching_trades]
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 400
-
-
 @bp.route('/list', methods=['GET'])
 def list_trades():
     """List all trades ordered by creation date.
