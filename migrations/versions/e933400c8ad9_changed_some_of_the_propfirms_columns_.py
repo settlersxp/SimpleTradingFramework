@@ -64,23 +64,24 @@ def upgrade():
         ]
 
         with op.batch_alter_table('prop_firms', schema=None) as batch_op:
-            # Apply column modifications
-            for col_name, col_type, nullable, default in column_modifications:
-                batch_op.alter_column(col_name,
-                                      existing_type=col_type,
-                                      nullable=nullable,
-                                      existing_server_default=sa.text(default))
 
             # Add new columns if they don't exist
             for col_name, col_type, nullable, default in columns_to_add:
                 if not context.has_column('prop_firms', col_name):
-                    if default:
+                    if default is not None:
                         batch_op.add_column(sa.Column(col_name, col_type,
                                                       nullable=nullable,
                                                       server_default=default))
                     else:
                         batch_op.add_column(sa.Column(col_name, col_type,
                                                       nullable=nullable))
+
+            # Apply column modifications
+            for col_name, col_type, nullable, default in column_modifications:
+                batch_op.alter_column(col_name,
+                                      existing_type=col_type,
+                                      nullable=nullable,
+                                      existing_server_default=sa.text(default))
     # ### end Alembic commands ###
 
 

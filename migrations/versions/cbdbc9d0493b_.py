@@ -22,8 +22,8 @@ def upgrade():
         batch_op.drop_column('platform_id')
 
     with op.batch_alter_table('prop_firm_trades', schema=None) as batch_op:
-        batch_op.create_foreign_key(None, 'prop_firms', ['prop_firm_id'], ['id'])
-        batch_op.create_foreign_key(None, 'trades', ['trade_id'], ['id'])
+        batch_op.create_foreign_key('fk_prop_firm_id', 'prop_firms', ['prop_firm_id'], ['id'])
+        batch_op.create_foreign_key('fk_trade_id', 'trades', ['trade_id'], ['id'])
         batch_op.drop_column('id')
         batch_op.drop_column('trade_pair_id')
 
@@ -65,8 +65,8 @@ def downgrade():
     with op.batch_alter_table('prop_firm_trades', schema=None) as batch_op:
         batch_op.add_column(sa.Column('trade_pair_id', sa.INTEGER(), nullable=False))
         batch_op.add_column(sa.Column('id', sa.INTEGER(), nullable=False))
-        batch_op.drop_constraint(None, type_='foreignkey')
-        batch_op.drop_constraint(None, type_='foreignkey')
+        batch_op.drop_constraint('fk_prop_firm_id', type_='foreignkey')
+        batch_op.drop_constraint('fk_trade_id', type_='foreignkey')
 
     with op.batch_alter_table('prop_firm_trade_pair_association', schema=None) as batch_op:
         batch_op.add_column(sa.Column('platform_id', sa.INTEGER(), nullable=True))
