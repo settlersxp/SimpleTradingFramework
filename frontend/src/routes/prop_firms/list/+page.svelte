@@ -10,7 +10,12 @@
     let prop_firms = $state<PropFirm[]>([]);
 
     $effect(() => {
-        fetch("http://100.66.179.48:3100/prop_firms/")
+        fetch("/api/prop_firms", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
             .then((res) => res.json())
             .then((data) => (prop_firms = data as PropFirm[]));
     });
@@ -18,6 +23,9 @@
 
 <div>
     <h1>Prop Firms</h1>
+    <a href="/prop_firms/" class="bg-blue-500 text-white px-4 py-2 rounded-md">
+        New
+    </a>
     <ul>
         {#each prop_firms as prop_firm}
             <li>{prop_firm.name}</li>
