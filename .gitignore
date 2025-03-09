@@ -1,4 +1,6 @@
 *.log
+.pytest_cache
+.mypy_cache
 last_folder_hash.txt
 saved_folder_hash.txt
 venv/
