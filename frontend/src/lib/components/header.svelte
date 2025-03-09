@@ -14,7 +14,7 @@
         },
         {
             name: "Trades",
-            path: "/trades/list",
+            path: "/trades/view",
             endpoint: "trades.view_trades",
         },
         {
@@ -23,7 +23,7 @@
             endpoint: "trade_pairs.index",
         },
         {
-            name: "Trades List",
+            name: "Opened trades",
             path: "/trades/list",
             endpoint: "trades.list_trades",
         },

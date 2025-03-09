@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, render_template
+from flask import Blueprint, jsonify, request
 from app.models.trade import Trade
 from app.routes.trades_association import add_trade_associations
 from app.models.prop_firm import PropFirm
@@ -56,12 +56,12 @@ def trades():
             }), 400
 
 
-@bp.route('/view')
+@bp.route('/view', methods=['GET'])
 def view_trades():
     """View trades along with their associated prop firms.
 
     Returns:
-        Rendered HTML template displaying trades with their associated prop firms.
+        JSON response containing trades with their associated prop firms.
     """
     trades_with_firms = db.session.query(Trade, PropFirm)\
         .select_from(Trade)\
@@ -69,7 +69,19 @@ def view_trades():
         .join(PropFirm, PropFirm.id == PropFirmTrades.prop_firm_id)\
         .order_by(Trade.id.desc())\
         .all()
-    return render_template('trades/view_trades.html', trades_with_firms=trades_with_firms)
+    
+    result = []
+    for trade, prop_firm in trades_with_firms:
+        trade_data = trade.to_dict()
+        trade_data['prop_firm'] = {
+            'id': prop_firm.id,
+            'name': prop_firm.name,
+            'available_balance': prop_firm.available_balance,
+            'dowdown_percentage': prop_firm.dowdown_percentage
+        }
+        result.append(trade_data)
+    
+    return jsonify({"trades_with_firms": result})
 
 
 @bp.route('/list', methods=['GET'])
@@ -77,7 +89,7 @@ def list_trades():
     """List all trades ordered by creation date with their prop firm details.
 
     Returns:
-        Rendered HTML template displaying the list of trades.
+        JSON response containing the list of trades with response data.
     """
     trades = db.session.query(Trade, PropFirmTrades.response)\
         .join(PropFirmTrades)\
@@ -93,7 +105,7 @@ def list_trades():
             trade_dict['response'] = None
         trades_with_response.append(trade_dict)
     
-    return render_template('trades/list.html', trades=trades_with_response)
+    return jsonify({"trades": trades_with_response})
 
 
 @bp.route('/<int:trade_id>', methods=['DELETE'])
@@ -166,7 +178,7 @@ def close_trade():
         # Convert trade to MT string format with close order
         mt_string = (
             f'"strategy":"{trade.strategy}", '
-            f'"order":"{trade.order_type}", '
+            f'"order":"close", '
             f'"contracts":"{trade.contracts}", '
             f'"ticker":"{trade.ticker}", '
             f'"position_size":"{trade.position_size}"'

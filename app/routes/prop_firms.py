@@ -3,8 +3,7 @@ from app.models.prop_firm import PropFirm
 from app import db
 from app.forms.prop_firm import PropFirmForm
 from app.models.trade_pairs import TradePairs
-from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
-from sqlalchemy.sql import func
+from app.models.trade_association import PropFirmTrades
 
 bp = Blueprint('prop_firms', __name__, url_prefix='/prop_firms')
 
@@ -15,18 +14,26 @@ def create_and_get_prop_firms():
         # First query: Get all prop firms
         prop_firms = PropFirm.query.all()
         
-        # Second query: Get all trade associations
+        # Second query: Get all trade associations using PropFirmTrades model
         associations = db.session.query(
-            PropFirmTradePairAssociation.prop_firm_id,
-            PropFirmTradePairAssociation.trade_pair_id
+            PropFirmTrades.prop_firm_id,
+            PropFirmTrades.trade_id,
+            PropFirmTrades.platform_id,
+            PropFirmTrades.response
         ).all()
         
-        # Create a dictionary to group trade pairs by prop firm
+        # Create a dictionary to group trade associations by prop firm
         trade_map = {}
-        for prop_firm_id, trade_pair_id in associations:
+        for assoc in associations:
+            prop_firm_id = assoc.prop_firm_id
             if prop_firm_id not in trade_map:
                 trade_map[prop_firm_id] = []
-            trade_map[prop_firm_id].append(trade_pair_id)
+            
+            trade_map[prop_firm_id].append({
+                "trade_id": assoc.trade_id,
+                "platform_id": assoc.platform_id,
+                "response": assoc.response
+            })
         
         # Build response with combined data
         return jsonify([{
