@@ -4,6 +4,7 @@ from app import db
 from app.forms.prop_firm import PropFirmForm
 from app.models.trade_pairs import TradePairs
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
+from sqlalchemy.sql import func
 
 bp = Blueprint('prop_firms', __name__, url_prefix='/prop_firms')
 
@@ -11,15 +12,31 @@ bp = Blueprint('prop_firms', __name__, url_prefix='/prop_firms')
 @bp.route('/', methods=['GET', 'POST'])
 def create_and_get_prop_firms():
     if request.method == 'GET':
-        prop_firms = db.session.query(PropFirm).all()
+        # First query: Get all prop firms
+        prop_firms = PropFirm.query.all()
+        
+        # Second query: Get all trade associations
+        associations = db.session.query(
+            PropFirmTradePairAssociation.prop_firm_id,
+            PropFirmTradePairAssociation.trade_pair_id
+        ).all()
+        
+        # Create a dictionary to group trade pairs by prop firm
+        trade_map = {}
+        for prop_firm_id, trade_pair_id in associations:
+            if prop_firm_id not in trade_map:
+                trade_map[prop_firm_id] = []
+            trade_map[prop_firm_id].append(trade_pair_id)
+        
+        # Build response with combined data
         return jsonify([{
-                "id": pf.id,
-                "name": pf.name,
-                "full_balance": pf.full_balance,
-                "available_balance": pf.available_balance,
-                "dowdown_percentage": pf.dowdown_percentage,
-                "trades": [t.id for t in pf.trades]
-            } for pf in prop_firms])
+            "id": pf.id,
+            "name": pf.name,
+            "full_balance": pf.full_balance,
+            "available_balance": pf.available_balance,
+            "dowdown_percentage": pf.dowdown_percentage,
+            "trades": trade_map.get(pf.id, [])
+        } for pf in prop_firms])
     elif request.method == 'POST':
         try:
             # Handle both JSON and form data
