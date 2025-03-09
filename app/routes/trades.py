@@ -79,8 +79,8 @@ def list_trades():
     Returns:
         Rendered HTML template displaying the list of trades.
     """
-    trades = db.session.query(Trade, prop_firm_trades.c.response)\
-        .join(prop_firm_trades)\
+    trades = db.session.query(Trade, PropFirmTrades.response)\
+        .join(PropFirmTrades)\
         .order_by(Trade.created_at.desc())\
         .all()
     
