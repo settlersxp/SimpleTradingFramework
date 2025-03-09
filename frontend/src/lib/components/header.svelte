@@ -9,7 +9,7 @@
     const navItems = [
         {
             name: "Prop Firms",
-            path: "/prop_firms/list",
+            path: "/prop_firms/",
             endpoint: "prop_firms.view_prop_firms",
         },
         {

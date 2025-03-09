@@ -22,10 +22,6 @@
 </script>
 
 <div>
-    <h1>Prop Firms</h1>
-    <a href="/prop_firms/" class="bg-blue-500 text-white px-4 py-2 rounded-md">
-        New
-    </a>
     <ul>
         {#each prop_firms as prop_firm}
             <li>{prop_firm.name}</li>

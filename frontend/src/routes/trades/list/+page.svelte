@@ -9,7 +9,14 @@
         updated_at: string;
     };
     $effect(() => {
-        fetch("api/trades/")
+        fetch("api/trades/",
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        )
             .then((res) => res.json())
             .then((data) => (trades = data as Trade[]));
     });

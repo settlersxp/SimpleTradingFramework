@@ -3,9 +3,15 @@ description: project structure
 globs: 
 alwaysApply: false
 ---
+---
+description: project structure
+globs: 
+alwaysApply: false
+---
     - The server side is inside the /app folder
     - The client side is inside the /frontend folder
-
+    - Always use onclick instead of on:click
+    
     # Server side:
     - Uses Python and Flask
     - Uses SQLAlchemy to interact with the database
