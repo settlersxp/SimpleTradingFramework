@@ -1,12 +1,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { PUBLIC_BACKEND_URL } from '$env/static/public';
+import { getBackendUrl } from '$lib/stores/environment';
 
 export const POST: RequestHandler = async ({ request }) => {
     try {
         const formData = await request.json();
+        const backendUrl = getBackendUrl();
 
-        const response = await fetch(`${PUBLIC_BACKEND_URL}/prop_firms`, {
+        const response = await fetch(`${backendUrl}/prop_firms`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -33,7 +34,8 @@ export const POST: RequestHandler = async ({ request }) => {
 
 export const GET: RequestHandler = async () => {
     try {
-        const response = await fetch(`${PUBLIC_BACKEND_URL}/prop_firms`);
+        const backendUrl = getBackendUrl();
+        const response = await fetch(`${backendUrl}/prop_firms`);
         const data = await response.json();
         return json(data);
     } catch (error) {

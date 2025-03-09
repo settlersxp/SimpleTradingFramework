@@ -9,7 +9,7 @@
         updated_at: string;
     };
     $effect(() => {
-        fetch("http://100.66.179.48:3100/trades/")
+        fetch("api/trades/")
             .then((res) => res.json())
             .then((data) => (trades = data as Trade[]));
     });
