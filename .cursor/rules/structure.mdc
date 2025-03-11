@@ -3,20 +3,44 @@ description: project structure
 globs: 
 alwaysApply: false
 ---
----
-description: project structure
-globs: 
-alwaysApply: false
----
-    - The server side is inside the /app folder
-    - The client side is inside the /frontend folder
-    - Always use onclick instead of on:click
-    
-    # Server side:
-    - Uses Python and Flask
-    - Uses SQLAlchemy to interact with the database
-    - Uses Pytest to run tests
+# Structure
+- The server side is inside the /app folder
+- The client side is inside the /frontend folder
 
-    # Client side:
-    - Uses Svelte5
-    - Uses Tailwind CSS
+Svelte syntax:
+- Always use onclick instead of on:click
+    
+# Database:
+- Is SQLite
+- When the structure is changed, a "flask db migrate" will be run
+
+# Server side:
+- Uses Python and Flask
+- Uses SQLAlchemy to interact with the database
+- The models are should be put inside /app/models
+- The endpoints should be put inside /app/routes
+
+# Client side:
+- Uses SvelteKit
+- Uses Tailwind CSS
+- Reusable components are in in /frontend/src/lib/components
+- Reusable stores are in in /frontend/src/lib/stores
+- Vite endpoints code are in /frontend/src/routes/api
+- Svelte5 code is in /frontend/src/routes
+- New node models are installed with "npm" and must be added in /frontend/package.json
+
+# Solution flow:
+1. Code the SQLAlchemy model first
+2. Adapt the existing SQLAlchemy
+3. Code the model logic inside the model
+4. Code the endpoint logic inside the backend endpoint
+5. Create a frontend API
+6. Create a frontend Prop
+7. Create the frontend logic inside the Svelte5 component
+8. Crate the UI
+
+# Answer style:
+- Always use DRY and KISS principles.
+- Do not refactor existing functionality if not required by the current change.
+- Be succint if possible.
+- If new files are required, always propose their names.

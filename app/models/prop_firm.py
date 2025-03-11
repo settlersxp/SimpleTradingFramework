@@ -1,6 +1,7 @@
 from app import db, TimezoneAwareModel
 from datetime import datetime
 from app.models.trade import Trade
+from app.models.user import user_prop_firm
 import importlib
 from typing import Optional, ClassVar
 from app.trade_actions.trade_interface import TradingInterface
@@ -21,6 +22,8 @@ class PropFirm(TimezoneAwareModel):
     ip_address = db.Column(db.String(100), nullable=True)
     port = db.Column(db.Integer, nullable=True)
     platform_type = db.Column(db.String(100), nullable=True)
+    users = db.relationship('User', secondary=user_prop_firm, 
+                           backref=db.backref('prop_firms', lazy='dynamic'))
 
     # One to many relationship with trades in a different association table
     trade_associations = db.relationship("PropFirmTrades", back_populates="prop_firm")
