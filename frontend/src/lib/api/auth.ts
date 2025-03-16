@@ -63,7 +63,7 @@ export async function logout(): Promise<AuthResponse> {
 
 export async function getCurrentUser(): Promise<AuthResponse> {
     try {
-        const response = await fetch(`${getBackendUrl()}/api/auth/me`, {
+        const response = await fetch(`/api/auth/me`, {
             credentials: 'include',
         });
 

@@ -1,0 +1,26 @@
+---
+description: 
+globs: *.svelte
+alwaysApply: true
+---
+# Syntax
+- Always use onclick instead of on:click
+- Always use onsubmit instead of on:submit. The correct syntax is onsubmit={function to call}
+
+# Client side:
+- Uses SvelteKit
+- Uses Tailwind CSS
+- Reusable components are in in /frontend/src/lib/components
+- Reusable stores are in in /frontend/src/lib/stores
+- Vite endpoints code are in /frontend/src/routes/api
+- Svelte5 code which requires authenticated users is in /frontend/src/routes/(authed)/
+- Svelte5 code which requires anonymous users is in /frontend/src/routes/
+- New node models are installed with "npm" and must be added in /frontend/package.json
+
+# Design flow:
+1. Create a frontend API if one doesn't exist yet
+2. For every new component create a frontend type Prop if one doesn't exist yet
+3. Code using Svelte5 runes
+4. Never use <slot></slot> because is deprecated. Always use {@render ...} when required to render a #snippet
+4. Create the frontend logic inside the Svelte5 component
+5. Create the UI

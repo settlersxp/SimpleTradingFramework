@@ -3,13 +3,15 @@
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
 
-    let email = "";
-    let password = "";
-    let error = "";
-    let isSubmitting = false;
+    let email = $state("");
+    let password = $state("");
+    let error = $state("");
+    let isSubmitting = $state(false);
 
-    // Get the redirectTo parameter from the URL if it exists
-    $: redirectTo = page.url.searchParams.get("redirectTo") || "/prop_firms";
+    // Get the redirectTo parameter from the URL
+    let redirectTo = $derived(
+        page.url.searchParams.get("redirectTo") || "/prop_firms",
+    );
 
     async function handleSubmit() {
         isSubmitting = true;
@@ -35,10 +37,12 @@
     <title>Login - Trading App</title>
 </svelte:head>
 
-<!-- Title slot for the layout -->
-<slot slot="title">Sign in to your account</slot>
+{#snippet header()}
+    <h1>Login</h1>
+{/snippet}
+{@render header()}
 
-<form class="space-y-6" on:submit|preventDefault={handleSubmit}>
+<form class="space-y-6" onsubmit={handleSubmit}>
     {#if error}
         <div class="rounded-md bg-red-50 p-4">
             <div class="flex">

@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 import type { User } from '$lib/api/auth';
 import { browser } from '$app/environment';
-import { getBackendUrl } from "$lib/stores/environment";
+import { getCurrentUser } from '$lib/api/auth';
 
 export const user = writable<User | null>(null);
 export const isAuthenticated = writable<boolean>(false);
@@ -11,10 +11,7 @@ export const isLoading = writable<boolean>(true);
 export function initAuth() {
     if (browser) {
         isLoading.set(true);
-        fetch(`${getBackendUrl()}/api/auth/me`, {
-            credentials: 'include',
-        })
-            .then(res => res.json())
+        getCurrentUser()
             .then(data => {
                 if (data.user) {
                     user.set(data.user);

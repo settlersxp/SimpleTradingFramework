@@ -1,5 +1,5 @@
 <script lang="ts">
-    import AnnonymousHeader from "$lib/components/AnnonymousHeader.svelte";
+    import AnnonymousHeader from "$lib/components/header.svelte";
     import AuthHeader from "$lib/components/AuthHeader.svelte";
 
     let { data, children } = $props();

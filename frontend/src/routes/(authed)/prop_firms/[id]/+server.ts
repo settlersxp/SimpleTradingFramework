@@ -2,40 +2,11 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getBackendUrl } from '$lib/stores/environment';
 
-// Create a new prop firm
-export const POST: RequestHandler = async ({ request }) => {
-    try {
-        const formData = await request.json();
-        const backendUrl = getBackendUrl();
-
-        const response = await fetch(`${backendUrl}/prop_firms`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return json(data);
-    } catch (error) {
-        console.error('Error:', error);
-        return json({
-            error: error instanceof Error ? error.message : 'Failed to create prop firm'
-        }, { status: 500 });
-    }
-};
-
-// Get all prop firms
-export const GET: RequestHandler = async () => {
+// Get a specific prop firm
+export const GET: RequestHandler = async ({ params }) => {
     try {
         const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/prop_firms`);
+        const response = await fetch(`${backendUrl}/prop_firms/${params.id}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -46,7 +17,7 @@ export const GET: RequestHandler = async () => {
     } catch (error) {
         console.error('Error:', error);
         return json({
-            error: error instanceof Error ? error.message : 'Failed to fetch prop firms'
+            error: error instanceof Error ? error.message : 'Failed to fetch prop firm'
         }, { status: 500 });
     }
 };
@@ -100,4 +71,4 @@ export const DELETE: RequestHandler = async ({ params }) => {
             error: error instanceof Error ? error.message : 'Failed to delete prop firm'
         }, { status: 500 });
     }
-};
+}; 

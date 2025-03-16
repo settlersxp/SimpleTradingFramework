@@ -9,6 +9,7 @@
     import Logo from "$lib/components/Logo.svelte";
     import ToggleEnvironment from "$lib/components/ToggleEnvironment.svelte";
     onMount(() => {
+        // Initialize authentication
         initAuth();
     });
 
@@ -38,8 +39,6 @@
                     >
                     <div class="flex items-center">
                         <Header />
-
-
                     </div>
                 </div>
             </div>
