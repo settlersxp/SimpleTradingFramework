@@ -1,21 +1,43 @@
-import { redirect } from '@sveltejs/kit';
+import type { LayoutServerLoad } from './$types';
 import { getBackendUrl } from '$lib/stores/environment';
+import type { User } from '$lib/api/auth';
 
-export async function load({ url }) {
+export const load: LayoutServerLoad = async ({ cookies, fetch }) => {
+    // Get cookies that were set in the login route
+    const userId = cookies.get('user_id');
+    const sessionToken = cookies.get('session');
+
+    if (!userId || !sessionToken) {
+        return {
+            user: null
+        };
+    }
+
     try {
-        const response = await fetch(`${getBackendUrl()}/api/auth/me`, {
-            credentials: 'include'
+        const backendUrl = getBackendUrl();
+        const response = await fetch(`${backendUrl}/api/auth/me/${sessionToken}_${userId}`, {
+            credentials: 'include',
+            headers: {
+                'Cookie': `session=${sessionToken}; user_id=${userId}`
+            }
         });
+
+        if (!response.ok) {
+            return { user: null };
+        }
 
         const data = await response.json();
 
         if (data.user) {
-            throw redirect(303, '/prop_firms');
+            // Successfully loaded user from API
+            return {
+                user: data.user as User
+            };
         }
 
-        return {};
+        return { user: null };
     } catch (error) {
-        // If fetch fails, user is not logged in, so allow access
-        return {};
+        console.error('Error loading user in layout server:', error);
+        return { user: null };
     }
-}
+};

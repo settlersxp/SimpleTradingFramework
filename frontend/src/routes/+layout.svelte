@@ -1,28 +1,22 @@
 <script lang="ts">
-    import Header from "$lib/components/Header.svelte";
-    let { children } = $props();
+    import { page } from "$app/stores";
+    import * as auth from "$lib/stores/auth";
     import "../app.css";
-    import { onMount } from "svelte";
-    import { initAuth, isAuthenticated, user } from "$lib/stores/auth";
-    import { logout } from "$lib/api/auth";
-    import { goto } from "$app/navigation";
-    import Logo from "$lib/components/Logo.svelte";
     import ToggleEnvironment from "$lib/components/ToggleEnvironment.svelte";
-    onMount(() => {
-        // Initialize authentication
-        initAuth();
-    });
 
-    // Add a reactive statement to handle redirection when not authenticated
+    // Make user data available to all child components
+    let { children } = $props();
+
+    // If we have user data from server, sync it with our client-side state
     $effect(() => {
-        if (!$isAuthenticated) {
-            handleLogin();
+        if (
+            $page.data.user &&
+            JSON.stringify($page.data.user) !== JSON.stringify(auth.$user)
+        ) {
+            // Update client state with server data
+            auth.setUser($page.data.user);
         }
     });
-
-    function handleLogin() {
-        goto("/login");
-    }
 </script>
 
 <div class="min-h-screen bg-gray-50">
@@ -30,20 +24,25 @@
         class="flex justify-between items-center"
         style="max-width: 1200px; margin: 0 auto;"
     >
-        <Logo />
-        {#if $isAuthenticated}
-            <div class="ml-3 relative">
-                <div class="flex items-center">
-                    <span class="text-sm text-gray-700 mr-4"
-                        >{$user?.email}</span
-                    >
-                    <div class="flex items-center">
-                        <Header />
-                    </div>
-                </div>
+        <ToggleEnvironment />
+
+        {#if auth.$isLoading}
+            <span>Loading...</span>
+        {:else if auth.$isAuthenticated}
+            <div class="flex items-center space-x-2">
+                <span>Welcome, {auth.$user?.email}</span>
+                <a href="/logout" class="text-blue-500 hover:underline"
+                    >Logout</a
+                >
+            </div>
+        {:else}
+            <div class="space-x-2">
+                <a href="/login" class="text-blue-500 hover:underline">Login</a>
+                <a href="/register" class="text-blue-500 hover:underline"
+                    >Register</a
+                >
             </div>
         {/if}
-        <ToggleEnvironment />
     </nav>
 
     <main>

@@ -12,6 +12,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
     // Handle preflight requests
     if (event.request.method === 'OPTIONS') {
+        console.log('preflight request');
         return new Response(null, {
             headers: {
                 'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin ?? '')

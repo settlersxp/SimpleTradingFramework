@@ -12,47 +12,13 @@ export interface AuthResponse {
     message: string;
     user?: User;
     error?: string;
-}
-
-export async function register(email: string, password: string): Promise<AuthResponse> {
-    try {
-        const response = await fetch(`${getBackendUrl()}/api/auth/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-            credentials: 'include',
-        });
-
-        return await response.json();
-    } catch (error) {
-        return { message: 'Registration failed', error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-}
-
-export async function login(email: string, password: string): Promise<AuthResponse> {
-    try {
-        const response = await fetch(`${getBackendUrl()}/api/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-            credentials: 'include',
-        });
-
-        return await response.json();
-    } catch (error) {
-        return { message: 'Login failed', error: error instanceof Error ? error.message : 'Unknown error' };
-    }
+    cookies?: string[];
 }
 
 export async function logout(): Promise<AuthResponse> {
     try {
-        const response = await fetch(`${getBackendUrl()}/api/auth/logout`, {
-            method: 'POST',
-            credentials: 'include',
+        const response = await fetch(`/api/auth/logout`, {
+            method: 'DELETE',
         });
 
         return await response.json();
@@ -63,6 +29,7 @@ export async function logout(): Promise<AuthResponse> {
 
 export async function getCurrentUser(): Promise<AuthResponse> {
     try {
+        console.log('getting current user');
         const response = await fetch(`/api/auth/me`, {
             credentials: 'include',
         });

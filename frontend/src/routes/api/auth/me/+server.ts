@@ -1,35 +1,46 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getBackendUrl } from '$lib/stores/environment';
+import { dev } from '$app/environment';
 
-export const GET: RequestHandler = async ({ cookies, request }) => {
+// Handler for GET requests to /api/auth/me
+export const GET: RequestHandler = async ({ cookies }) => {
     try {
-        // Get all cookies from the request to forward them to the backend
-        const cookieHeader = request.headers.get('cookie');
-
-        // Make request to backend
         const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/api/auth/me`, {
-            headers: {
-                'Cookie': cookieHeader || '',
-            },
+
+        console.log('auth me cookies', cookies.get('session'), cookies.get('user_id'));
+        // Send request with credentials to include session cookies from Flask
+
+        const response = await fetch(`${backendUrl}/api/auth/me/${cookies.get('session')}_${cookies.get('user_id')}`, {
             credentials: 'include',
         });
 
         if (!response.ok) {
-            // If the backend returns an error, pass it through
-            const errorData = await response.json();
-            return json(errorData, { status: response.status });
+            // If authentication fails, clear the frontend cookie
+            cookies.delete('user_id', { path: '/' });
+            return json({ message: 'Not authenticated' }, { status: 401 });
         }
 
-        // Return the user data
-        const data = await response.json();
-        return json(data);
+        const result = await response.json();
+
+        // If we get a successful response but don't have the user_id cookie set yet,
+        // let's set it for frontend usage based on the user returned from backend
+        if (result.user?.id && !cookies.get('user_id')) {
+            cookies.set('user_id', String(result.user.id), {
+                path: '/',
+                httpOnly: true,
+                secure: !dev,
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24 * 7 // 1 week
+            });
+        }
+
+        return json(result);
     } catch (error) {
-        console.error('Error fetching current user:', error);
+        console.error('Authentication check error:', error);
         return json({
-            message: 'Failed to get user',
+            message: 'Failed to get user information',
             error: error instanceof Error ? error.message : 'Unknown error'
         }, { status: 500 });
     }
-}; 
+};

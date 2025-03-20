@@ -7,6 +7,14 @@ export interface UserPropFirmsResponse {
     error?: string;
 }
 
+export async function getAllPropFirms(): Promise<PropFirm[]> {
+    const response = await fetch(`${getBackendUrl()}/api/prop_firms`, {
+        credentials: 'include',
+    });
+
+    return await response.json();
+}
+
 export async function getUserPropFirms(): Promise<UserPropFirmsResponse> {
     try {
         const response = await fetch(`${getBackendUrl()}/api/user/prop_firms`, {

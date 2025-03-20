@@ -1,5 +1,4 @@
 <script lang="ts">
-    import AnnonymousHeader from "$lib/components/header.svelte";
     import AuthHeader from "$lib/components/AuthHeader.svelte";
 
     let { data, children } = $props();
@@ -14,13 +13,12 @@
         class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 border-b border-gray-200"
     >
         <div class="flex justify-between items-center">
-            <h1 class="text-3xl font-bold leading-tight text-gray-900">
-                Trading App
-            </h1>
             {#if data.user}
                 <AuthHeader />
             {:else}
-                <AnnonymousHeader />
+                <h1 class="text-3xl font-bold leading-tight text-gray-900">
+                    Trading App
+                </h1>
             {/if}
         </div>
     </header>

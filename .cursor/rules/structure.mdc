@@ -16,6 +16,7 @@ alwaysApply: false
 - Uses SQLAlchemy to interact with the database
 - The models are should be put inside /app/models
 - The endpoints should be put inside /app/routes
+- Always install the python dependencies by adding them to requirements.txt
 
 # Solution flow:
 1. Code the SQLAlchemy model first

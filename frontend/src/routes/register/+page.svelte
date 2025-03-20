@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { register } from "$lib/api/auth";
     import { goto } from "$app/navigation";
 
     let email = "";
@@ -8,26 +7,46 @@
     let error = "";
     let isSubmitting = false;
 
-    async function handleSubmit() {
+    async function handleSubmit(event: Event) {
+        event.preventDefault();
+        error = "";
+
+        // Validate form
+        if (!email || !password || !confirmPassword) {
+            error = "All fields are required";
+            return;
+        }
+
         if (password !== confirmPassword) {
             error = "Passwords do not match";
             return;
         }
 
         isSubmitting = true;
-        error = "";
 
         try {
-            const response = await register(email, password);
+            const response = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email, password }),
+            });
 
-            if (response.error) {
-                error = response.error;
-            } else {
-                goto("/login");
+            const data = await response.json();
+
+            if (!response.ok) {
+                error = data.error || "Registration failed";
+                isSubmitting = false;
+                return;
             }
-        } catch (err) {
-            error = "An unexpected error occurred";
-        } finally {
+
+            // Success - redirect to login page
+            goto("/login");
+        } catch (e) {
+            console.error("Registration error:", e);
+            error =
+                e instanceof Error ? e.message : "An unexpected error occurred";
             isSubmitting = false;
         }
     }
@@ -40,7 +59,7 @@
 <!-- Title slot for the layout -->
 <slot slot="title">Create your account</slot>
 
-<form class="space-y-6" on:submit|preventDefault={handleSubmit}>
+<form class="space-y-6" onsubmit={handleSubmit}>
     {#if error}
         <div class="rounded-md bg-red-50 p-4">
             <div class="flex">

@@ -29,6 +29,11 @@
             path: "/trades/list",
             endpoint: "trades.list_trades",
         },
+        {
+            name: "Profiles",
+            path: "/profiles",
+            endpoint: "profiles.index",
+        },
     ];
 
     let toggleMenu = $state(false);

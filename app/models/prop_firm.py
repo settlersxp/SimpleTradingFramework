@@ -3,8 +3,9 @@ from datetime import datetime
 from app.models.trade import Trade
 from app.models.user import user_prop_firm
 import importlib
-from typing import Optional, ClassVar
+from typing import Optional, ClassVar, List
 from app.trade_actions.trade_interface import TradingInterface
+from sqlalchemy import select
 
 
 class PropFirm(TimezoneAwareModel):
@@ -22,13 +23,49 @@ class PropFirm(TimezoneAwareModel):
     ip_address = db.Column(db.String(100), nullable=True)
     port = db.Column(db.Integer, nullable=True)
     platform_type = db.Column(db.String(100), nullable=True)
-    users = db.relationship('User', secondary=user_prop_firm, 
-                           backref=db.backref('prop_firms', lazy='dynamic'))
-
+    
     # One to many relationship with trades in a different association table
     trade_associations = db.relationship("PropFirmTrades", back_populates="prop_firm")
 
     _trading_instance: ClassVar[Optional[TradingInterface]] = None
+
+    def get_users(self) -> List['User']:
+        """Manually get all users associated with this prop firm"""
+        from app.models.user import User
+        stmt = select(User).join(user_prop_firm).where(user_prop_firm.c.prop_firm_id == self.id)
+        return db.session.execute(stmt).scalars().all()
+    
+    def add_user(self, user):
+        """Manually add a user to this prop firm"""
+        if not self.id:
+            # Save the prop firm first if it doesn't have an ID
+            db.session.add(self)
+            db.session.flush()
+            
+        # Check if relationship already exists
+        stmt = select(user_prop_firm).where(
+            user_prop_firm.c.user_id == user.id,
+            user_prop_firm.c.prop_firm_id == self.id
+        )
+        exists = db.session.execute(stmt).first() is not None
+        
+        if not exists:
+            # Create the association
+            db.session.execute(user_prop_firm.insert().values(
+                user_id=user.id,
+                prop_firm_id=self.id,
+                created_at=datetime.utcnow()
+            ))
+            return True
+        return False
+    
+    def remove_user(self, user):
+        """Manually remove a user from this prop firm"""
+        result = db.session.execute(user_prop_firm.delete().where(
+            user_prop_firm.c.user_id == user.id,
+            user_prop_firm.c.prop_firm_id == self.id
+        ))
+        return result.rowcount > 0
 
     @property
     def trading(self) -> Optional[TradingInterface]:

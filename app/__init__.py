@@ -32,6 +32,13 @@ class TimezoneAwareModel(db.Model):
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # Ensure session cookies work properly
+    app.config['SESSION_COOKIE_SECURE'] = config_class.DEBUG is False
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
+    app.config['SESSION_TYPE'] = 'filesystem'
 
     db.init_app(app)
     migrate.init_app(app, db)
