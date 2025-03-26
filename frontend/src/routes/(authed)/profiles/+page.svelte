@@ -2,9 +2,9 @@
     import { deleteUser } from "$lib/api/auth";
     import { goto } from "$app/navigation";
 
-    let isDeleting = false;
-    let showDeleteConfirm = false;
-    let error = "";
+    let isDeleting = $state(false);
+    let showDeleteConfirm = $state(false);
+    let error = $state("");
     let { data } = $props();
 
     async function handleDeleteAccount() {

@@ -1,8 +1,10 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import { page } from "$app/state";
 
-    const { id } = $props();
+    // Get the id from the page store params
+    const id = page.params.id;
 
     type PropFirm = {
         id: number;
@@ -29,6 +31,7 @@
 
     async function fetchPropFirm() {
         try {
+            console.log("Fetching prop firm:", id);
             const response = await fetch(`/api/prop_firms/${id}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -100,10 +103,7 @@
                     <p>{error}</p>
                 </div>
             {:else if propFirm}
-                <form
-                    onsubmit={handleSubmit}
-                    class="px-6 py-6 space-y-6"
-                >
+                <form onsubmit={handleSubmit} class="px-6 py-6 space-y-6">
                     <!-- Name Field -->
                     <div>
                         <label

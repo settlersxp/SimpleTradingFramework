@@ -34,5 +34,6 @@ export function initAuth() {
             .finally(() => {
                 $isLoading = false;
             });
+
     }
 }

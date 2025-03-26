@@ -28,9 +28,12 @@
 
         {#if auth.$isLoading}
             <span>Loading...</span>
-        {:else if auth.$isAuthenticated}
+        {:else if auth.$user}
             <div class="flex items-center space-x-2">
-                <span>Welcome, {auth.$user?.email}</span>
+                <span class="text-gray-700 mr-4"
+                    >Welcome, {auth.$user?.email}</span
+                >
+
                 <a href="/logout" class="text-blue-500 hover:underline"
                     >Logout</a
                 >
