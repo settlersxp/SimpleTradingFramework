@@ -4,17 +4,18 @@ import { browser } from '$app/environment';
 // User state using Svelte 5 runes
 export let $user: User | null = null;
 export let $isAuthenticated = false;
-export let $isLoading = true;
+export let $isLoading = false;
 
 // This function is called to initialize auth state from a server response
 export function setUser(userData: User | null) {
     $user = userData;
     $isAuthenticated = !!userData;
+    console.log('userData', userData);
 }
 
 // Initialize the store
 export function initAuth() {
-    if (browser) {
+    if (browser && $user) {
         $isLoading = true;
         // Call our server endpoint which will respect cookies
         fetch('/api/auth/me')

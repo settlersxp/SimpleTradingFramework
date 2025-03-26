@@ -11,7 +11,7 @@ export const GET: RequestHandler = async ({ cookies }) => {
         console.log('auth me cookies', cookies.get('session'), cookies.get('user_id'));
         // Send request with credentials to include session cookies from Flask
 
-        const response = await fetch(`${backendUrl}/api/auth/me/${cookies.get('session')}_${cookies.get('user_id')}`, {
+        const response = await fetch(`${backendUrl}/auth/me/${cookies.get('session')}_${cookies.get('user_id')}`, {
             credentials: 'include',
         });
 

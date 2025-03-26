@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from "$app/stores";
+    import { page } from "$app/state";
     import * as auth from "$lib/stores/auth";
     import "../app.css";
     import ToggleEnvironment from "$lib/components/ToggleEnvironment.svelte";
@@ -10,11 +10,11 @@
     // If we have user data from server, sync it with our client-side state
     $effect(() => {
         if (
-            $page.data.user &&
-            JSON.stringify($page.data.user) !== JSON.stringify(auth.$user)
+            page.data.user &&
+            JSON.stringify(page.data.user) !== JSON.stringify(auth.$user)
         ) {
             // Update client state with server data
-            auth.setUser($page.data.user);
+            auth.setUser(page.data.user);
         }
     });
 </script>

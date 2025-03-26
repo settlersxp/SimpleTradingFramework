@@ -15,7 +15,10 @@ export const load: LayoutServerLoad = async ({ cookies, fetch }) => {
 
     try {
         const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/api/auth/me/${sessionToken}_${userId}`, {
+        const meUrl = `${backendUrl}/api/auth/me/${sessionToken}_${userId}`;
+        console.log('meUrl', meUrl);
+        
+        const response = await fetch(meUrl, {
             credentials: 'include',
             headers: {
                 'Cookie': `session=${sessionToken}; user_id=${userId}`

@@ -18,9 +18,10 @@ export const POST: RequestHandler = async ({ request, cookies }: { request: any,
 
     try {
         const backendUrl = getBackendUrl();
-        console.log(`Logging in at ${backendUrl}/api/auth/login`);
+        const loginUrl = `${backendUrl}/api/auth/login`;
+        console.log(`Logging in at ${loginUrl}`);
 
-        const response = await fetch(`${backendUrl}/api/auth/login`, {
+        const response = await fetch(loginUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

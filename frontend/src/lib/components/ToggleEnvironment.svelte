@@ -11,7 +11,7 @@
     <div class="environment-toggle">
         <span class="mr-2 text-sm">Environment:</span>
         <button
-            onclick={toggleEnvironment}
+            on:click|preventDefault={toggleEnvironment}
             class="px-3 py-1 rounded text-sm {$selectedEnvironment ===
             'production'
                 ? 'bg-red-500 text-white'
