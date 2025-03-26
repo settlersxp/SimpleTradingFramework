@@ -7,7 +7,7 @@ from app import db
 import json
 
 # Create a Blueprint for the trades routes
-bp = Blueprint('trades', __name__, url_prefix='/trades')
+bp = Blueprint('trades', __name__)
 
 
 @bp.route('/<int:trade_id>', methods=['GET'])

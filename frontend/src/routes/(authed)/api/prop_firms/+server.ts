@@ -1,14 +1,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getBackendUrl } from '$lib/stores/environment';
 
 // Create a new prop firm
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, fetch }: { request: any, fetch: any }) => {
     try {
         const formData = await request.json();
-        const backendUrl = getBackendUrl();
 
-        const response = await fetch(`${backendUrl}/prop_firms`, {
+        const response = await fetch(`/python/prop_firms`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -32,10 +30,9 @@ export const POST: RequestHandler = async ({ request }) => {
 };
 
 // Get all prop firms
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ fetch }: { fetch: any }) => {
     try {
-        const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/prop_firms`);
+        const response = await fetch(`/python/prop_firms/`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -52,12 +49,11 @@ export const GET: RequestHandler = async () => {
 };
 
 // Update a prop firm
-export const PUT: RequestHandler = async ({ params, request }) => {
+export const PUT: RequestHandler = async ({ params, request, fetch }: { params: any, request: any, fetch: any }) => {
     try {
         const formData = await request.json();
-        const backendUrl = getBackendUrl();
 
-        const response = await fetch(`${backendUrl}/prop_firms/${params.id}`, {
+        const response = await fetch(`/python/prop_firms/${params.id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -81,10 +77,9 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 };
 
 // Delete a prop firm
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async ({ params, fetch }: { params: any, fetch: any }) => {
     try {
-        const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/prop_firms/${params.id}`, {
+        const response = await fetch(`/python/prop_firms/${params.id}`, {
             method: 'DELETE'
         });
 

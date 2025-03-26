@@ -1,11 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getBackendUrl } from "$lib/stores/environment";
 import { dev } from '$app/environment';
 
 
-// Handle POST requests to /api/auth/login
-export const POST: RequestHandler = async ({ request, cookies }: { request: any, cookies: any }) => {
+// Handle POST requests to /python/auth/login
+export const POST: RequestHandler = async ({ request, cookies, fetch }: { request: any, cookies: any, fetch: any }) => {
     const request_data = await request.json();
     const { email, password } = request_data;
 
@@ -17,8 +16,7 @@ export const POST: RequestHandler = async ({ request, cookies }: { request: any,
     }
 
     try {
-        const backendUrl = getBackendUrl();
-        const loginUrl = `${backendUrl}/api/auth/login`;
+        const loginUrl = `/python/auth/login`;
         console.log(`Logging in at ${loginUrl}`);
 
         const response = await fetch(loginUrl, {

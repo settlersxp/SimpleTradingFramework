@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, render_template
 from app import db
 from app.models.trade_pairs import TradePairs
 
-bp = Blueprint('trade_pairs', __name__, url_prefix='/trade_pairs')
+bp = Blueprint('trade_pairs', __name__ )
 
 
 @bp.route('/', methods=['GET'])

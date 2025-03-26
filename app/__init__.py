@@ -51,10 +51,10 @@ def create_app(config_class=Config):
     from app.routes.auth import auth_bp
     from app.routes.user_prop_firms import user_prop_firms_bp
 
-    app.register_blueprint(prop_firms_bp, url_prefix='/prop_firms')
-    app.register_blueprint(trades_bp, url_prefix='/trades')
-    app.register_blueprint(trades_association_bp, url_prefix='/trades_association')
-    app.register_blueprint(trade_pairs_bp, url_prefix='/trade_pairs')
+    app.register_blueprint(prop_firms_bp, url_prefix='/api/prop_firms')
+    app.register_blueprint(trades_bp, url_prefix='/api/trades')
+    app.register_blueprint(trades_association_bp, url_prefix='/api/trades_association')
+    app.register_blueprint(trade_pairs_bp, url_prefix='/api/trade_pairs')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(user_prop_firms_bp, url_prefix='/api/user_prop_firms')
 

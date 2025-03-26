@@ -1,17 +1,15 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getBackendUrl } from '$lib/stores/environment';
 import { dev } from '$app/environment';
 
 // Handler for GET requests to /api/auth/me
 export const GET: RequestHandler = async ({ cookies }) => {
     try {
-        const backendUrl = getBackendUrl();
 
         console.log('auth me cookies', cookies.get('session'), cookies.get('user_id'));
         // Send request with credentials to include session cookies from Flask
 
-        const response = await fetch(`${backendUrl}/auth/me/${cookies.get('session')}_${cookies.get('user_id')}`, {
+        const response = await fetch(`python/auth/me/${cookies.get('session')}_${cookies.get('user_id')}`, {
             credentials: 'include',
         });
 

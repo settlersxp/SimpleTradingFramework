@@ -1,5 +1,4 @@
 import type { LayoutServerLoad } from './$types';
-import { getBackendUrl } from '$lib/stores/environment';
 import type { User } from '$lib/api/auth';
 
 export const load: LayoutServerLoad = async ({ cookies, fetch }) => {
@@ -14,10 +13,9 @@ export const load: LayoutServerLoad = async ({ cookies, fetch }) => {
     }
 
     try {
-        const backendUrl = getBackendUrl();
-        const meUrl = `${backendUrl}/api/auth/me/${sessionToken}_${userId}`;
+        const meUrl = `/python/auth/me/${sessionToken}_${userId}`;
         console.log('meUrl', meUrl);
-        
+
         const response = await fetch(meUrl, {
             credentials: 'include',
             headers: {

@@ -8,9 +8,9 @@ const ALLOWED_ORIGINS = [
 ];
 
 // Function to get the current backend URL based on environment
-async function getBackendUrl(): Promise<string> {
+async function getBackendUrl(fetch = globalThis.fetch): Promise<string> {
     try {
-        // Fetch the current environment from our server-side endpoint
+        // Use the passed fetch function instead of global fetch
         const response = await fetch('http://localhost:5173/api/environment/set', {
             method: 'GET',
             headers: {
@@ -52,20 +52,23 @@ export const handle: Handle = async ({ event, resolve }) => {
         });
     }
 
-    // Handle API requests by forwarding to the backend
-    if (event.url.pathname.startsWith('/api/') &&
-        !event.url.pathname.startsWith('/api/environment/')) {
+    // If URL starts with API, let it pass to SvelteKit
+    if (event.url.pathname.startsWith('/api/')) {
+        return resolve(event);
+    }
+
+    // If URL starts with python, forward it to backend
+    if (event.url.pathname.startsWith('/python/')) {
 
         try {
-            console.log('event.url', event.url);
-            const backendUrl = await getBackendUrl();
-            const pathWithoutApi = event.url.pathname.replace(/^\/api/, '');
-            const targetUrl = `${backendUrl}/api${pathWithoutApi}${event.url.search}`;
+            const backendUrl = await getBackendUrl(event.fetch);
+            const pathWithoutPython = event.url.pathname.replace(/^\/python/, '/api');
+            const targetUrl = `${backendUrl}${pathWithoutPython}${event.url.search}`;
 
             console.log(`Proxying request to: ${targetUrl}`);
 
-            // Forward the request to the backend
-            const response = await fetch(targetUrl, {
+            // Use event.fetch instead of global fetch
+            const response = await event.fetch(targetUrl, {
                 method: event.request.method,
                 headers: event.request.headers,
                 body: event.request.method !== 'GET' && event.request.method !== 'HEAD'

@@ -6,7 +6,7 @@ from app.models.trade_pairs import TradePairs
 from app.models.trade_association import PropFirmTrades
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 
-bp = Blueprint("prop_firms", __name__, url_prefix="/prop_firms")
+bp = Blueprint("prop_firms", __name__)
 
 
 @bp.route("/", methods=["GET", "POST"])
