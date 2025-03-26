@@ -1,12 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getBackendUrl } from '$lib/stores/environment';
 
 // Get a specific trade
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, fetch }: { params: any, fetch: any }) => {
     try {
-        const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/trades/${params.id}`);
+        const response = await fetch(`/python/trades/${params.id}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -21,10 +19,9 @@ export const GET: RequestHandler = async ({ params }) => {
 };
 
 // Delete a trade
-export const DELETE: RequestHandler = async ({ params }) => {
+export const DELETE: RequestHandler = async ({ params, fetch }: { params: any, fetch: any }) => {
     try {
-        const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/trades/${params.id}`, {
+        const response = await fetch(`/python/trades/${params.id}`, {
             method: 'DELETE'
         });
 

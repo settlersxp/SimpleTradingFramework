@@ -1,12 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getBackendUrl } from '$lib/stores/environment';
 
 // Replay a trade
-export const POST: RequestHandler = async ({ params }) => {
+export const POST: RequestHandler = async ({ params, fetch }: { params: any, fetch: any }) => {
     try {
-        const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/trades/${params.id}/replay`, {
+        const response = await fetch(`/python/trades/${params.id}/replay`, {
             method: 'POST'
         });
 

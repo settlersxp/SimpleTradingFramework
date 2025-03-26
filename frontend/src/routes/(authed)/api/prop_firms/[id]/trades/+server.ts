@@ -1,12 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getBackendUrl } from '$lib/stores/environment';
 
 // Get trades for a specific prop firm
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, fetch }: { params: any, fetch: any }) => {
     try {
-        const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/prop_firms/${params.id}/trades`);
+        const response = await fetch(`/python/prop_firms/${params.id}/trades`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

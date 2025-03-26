@@ -96,13 +96,13 @@ def add_trade_associations(mt_string, create_trade=True):
         outcome = prop_firm.trading.place_trade(trade, label=association.label)
         if outcome.success:
             # Add trade to prop firm with platform ID
-            stmt = PropFirmTrades.insert().values(
+            prop_firm_trade = PropFirmTrades(
                 prop_firm_id=prop_firm.id,
                 trade_id=trade.id,
                 platform_id=outcome.details['request_id'],
                 response=json.dumps(outcome.details['response'])
             )
-            db.session.execute(stmt)
+            db.session.add(prop_firm_trade)
 
             prop_firm.update_available_balance(trade)
             print(f"Trade {outcome.details['request_id']} placed successfully")

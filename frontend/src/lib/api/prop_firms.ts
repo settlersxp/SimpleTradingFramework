@@ -23,7 +23,7 @@ export interface PropFirmsResponse {
 
 export async function getAllPropFirms(): Promise<PropFirmsResponse> {
     try {
-        const response = await fetch(`${getBackendUrl()}/api/prop_firms`, {
+        const response = await fetch(`/python/prop_firms`, {
             credentials: 'include',
         });
 
@@ -35,7 +35,7 @@ export async function getAllPropFirms(): Promise<PropFirmsResponse> {
 
 export async function getPropFirm(id: number): Promise<{ prop_firm?: PropFirm; error?: string }> {
     try {
-        const response = await fetch(`${getBackendUrl()}/api/prop_firms/${id}`, {
+        const response = await fetch(`/python/prop_firms/${id}`, {
             credentials: 'include',
         });
 
@@ -47,7 +47,7 @@ export async function getPropFirm(id: number): Promise<{ prop_firm?: PropFirm; e
 
 export async function createPropFirm(propFirm: Omit<PropFirm, 'id' | 'created_at' | 'updated_at'>): Promise<{ prop_firm?: PropFirm; error?: string }> {
     try {
-        const response = await fetch(`${getBackendUrl()}/api/prop_firms`, {
+        const response = await fetch(`/python/prop_firms`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ export async function createPropFirm(propFirm: Omit<PropFirm, 'id' | 'created_at
 
 export async function updatePropFirm(id: number, propFirm: Partial<PropFirm>): Promise<{ prop_firm?: PropFirm; error?: string }> {
     try {
-        const response = await fetch(`${getBackendUrl()}/api/prop_firms/${id}`, {
+        const response = await fetch(`/python/prop_firms/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ export async function updatePropFirm(id: number, propFirm: Partial<PropFirm>): P
 
 export async function deletePropFirm(id: number): Promise<{ message?: string; error?: string }> {
     try {
-        const response = await fetch(`${getBackendUrl()}/api/prop_firms/${id}`, {
+        const response = await fetch(`/python/prop_firms/${id}`, {
             method: 'DELETE',
             credentials: 'include',
         });

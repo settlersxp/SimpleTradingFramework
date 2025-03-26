@@ -1,4 +1,3 @@
-import { getBackendUrl } from "$lib/stores/environment";
 import type { PropFirm } from './prop_firms';
 
 export interface UserPropFirmsResponse {
@@ -8,7 +7,7 @@ export interface UserPropFirmsResponse {
 }
 
 export async function getAllPropFirms(): Promise<PropFirm[]> {
-    const response = await fetch(`${getBackendUrl()}/api/prop_firms`, {
+    const response = await fetch(`/python/prop_firms`, {
         credentials: 'include',
     });
 
@@ -17,7 +16,7 @@ export async function getAllPropFirms(): Promise<PropFirm[]> {
 
 export async function getUserPropFirms(): Promise<UserPropFirmsResponse> {
     try {
-        const response = await fetch(`${getBackendUrl()}/api/user/prop_firms`, {
+        const response = await fetch(`/python/user/prop_firms`, {
             credentials: 'include',
         });
 
@@ -29,7 +28,7 @@ export async function getUserPropFirms(): Promise<UserPropFirmsResponse> {
 
 export async function addPropFirmToUser(propFirmId: number): Promise<{ message: string; error?: string }> {
     try {
-        const response = await fetch(`${getBackendUrl()}/api/user/prop_firms/${propFirmId}`, {
+        const response = await fetch(`/python/user/prop_firms/${propFirmId}`, {
             method: 'POST',
             credentials: 'include',
         });
@@ -42,7 +41,7 @@ export async function addPropFirmToUser(propFirmId: number): Promise<{ message: 
 
 export async function removePropFirmFromUser(propFirmId: number): Promise<{ message: string; error?: string }> {
     try {
-        const response = await fetch(`${getBackendUrl()}/api/user/prop_firms/${propFirmId}`, {
+        const response = await fetch(`/python/user/prop_firms/${propFirmId}`, {
             method: 'DELETE',
             credentials: 'include',
         });

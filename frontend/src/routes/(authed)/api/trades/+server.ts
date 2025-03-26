@@ -1,13 +1,12 @@
 // Router for the trades endpoint
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getBackendUrl } from '$lib/stores/environment';
 
 // Get all trades
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ fetch }: { fetch: any }) => {
     try {
-        const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/trades`);
+
+        const response = await fetch(`/python/trades`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -22,12 +21,11 @@ export const GET: RequestHandler = async () => {
 };
 
 // Create a new trade
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, fetch }: { request: any, fetch: any }) => {
     try {
-        const backendUrl = getBackendUrl();
         const mtString = await request.text();
 
-        const response = await fetch(`${backendUrl}/trades`, {
+        const response = await fetch(`/python/trades`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain'
