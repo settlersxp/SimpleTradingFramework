@@ -25,9 +25,7 @@ export const GET: RequestHandler = async ({ params, fetch }: { params: any, fetc
 export const PUT: RequestHandler = async ({ params, request }) => {
     try {
         const formData = await request.json();
-        const backendUrl = getBackendUrl();
-
-        const response = await fetch(`${backendUrl}/prop_firms/${params.id}`, {
+        const response = await fetch(`/python/prop_firms/${params.id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -53,8 +51,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 // Delete a prop firm
 export const DELETE: RequestHandler = async ({ params }) => {
     try {
-        const backendUrl = getBackendUrl();
-        const response = await fetch(`${backendUrl}/prop_firms/${params.id}`, {
+
+        const response = await fetch(`/python/prop_firms/${params.id}`, {
             method: 'DELETE'
         });
 

@@ -1,20 +1,28 @@
 <script lang="ts">
-    import { page } from "$app/state";
+    // No need to import 'page' store anymore
     import * as auth from "$lib/stores/auth";
     import "../app.css";
     import ToggleEnvironment from "$lib/components/ToggleEnvironment.svelte";
 
-    // Make user data available to all child components
-    let { children } = $props();
+    // Destructure 'data' and 'children' from $props
+    // 'data' contains the result from your +layout.server.ts load function
+    let { data, children } = $props();
 
-    // If we have user data from server, sync it with our client-side state
+    // Effect to sync server data with client store
     $effect(() => {
+        // Access the user data directly from the 'data' prop
+        const serverUser = data.user;
+
+        // Check if serverUser exists and is different from the store's user
         if (
-            page.data.user &&
-            JSON.stringify(page.data.user) !== JSON.stringify(auth.$user)
+            serverUser &&
+            JSON.stringify(serverUser) !== JSON.stringify(auth.$user)
         ) {
             // Update client state with server data
-            auth.setUser(page.data.user);
+            auth.setUser(serverUser);
+        } else if (!serverUser && auth.$user !== null) {
+            // Handle case where server says no user, but store still has one
+            auth.setUser(null);
         }
     });
 </script>
