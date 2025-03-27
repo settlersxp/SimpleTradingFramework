@@ -5,97 +5,100 @@ from app.forms.prop_firm import PropFirmForm
 from app.models.trade_pairs import TradePairs
 from app.models.trade_association import PropFirmTrades
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
-
+from app.routes.auth import login_required
 bp = Blueprint("prop_firms", __name__)
 
+@login_required
+@bp.route("/create", methods=["POST"])
+def create_prop_firm():
+    try:
+        data = request.get_json()
 
-@bp.route("/", methods=["GET", "POST"])
-def create_and_get_prop_firms():
-    if request.method == "GET":
-        # First query: Get all prop firms
-        prop_firms = PropFirm.query.all()
-
-        # Second query: Get all trade associations
-        associations = db.session.query(
-            PropFirmTrades.prop_firm_id,
-            PropFirmTrades.trade_id,
-            PropFirmTrades.platform_id,
-            PropFirmTrades.response,
-        ).all()
-
-        # Create a dictionary to group trade associations by prop firm
-        trade_map = {}
-        for assoc in associations:
-            prop_firm_id = assoc.prop_firm_id
-            if prop_firm_id not in trade_map:
-                trade_map[prop_firm_id] = []
-
-            trade_map[prop_firm_id].append(
-                {
-                    "trade_id": assoc.trade_id,
-                    "platform_id": assoc.platform_id,
-                    "response": assoc.response,
-                }
-            )
-
-        # Build response with combined data
-        return jsonify(
-            [
-                {
-                    "id": pf.id,
-                    "name": pf.name,
-                    "full_balance": pf.full_balance,
-                    "available_balance": pf.available_balance,
-                    "dowdown_percentage": pf.dowdown_percentage,
-                    "username": pf.username,
-                    "password": pf.password,
-                    "ip_address": pf.ip_address,
-                    "port": pf.port,
-                    "platform_type": pf.platform_type,
-                    "is_active": pf.is_active,
-                    "created_at": pf.created_at.isoformat() if pf.created_at else None,
-                    "trades": trade_map.get(pf.id, []),
-                }
-                for pf in prop_firms
-            ]
+        # Create a new prop firm
+        prop_firm = PropFirm(
+            name=data.get("name"),
+            full_balance=float(data.get("full_balance", 0)),
+            available_balance=float(data.get("available_balance", 0)),
+            dowdown_percentage=float(data.get("dowdown_percentage", 0)),
+            is_active=data.get("is_active", False),
+            username=data.get("username"),
+            password=data.get("password"),
+            ip_address=data.get("ip_address"),
+            port=data.get("port"),
+            platform_type=data.get("platform_type"),
         )
 
-    elif request.method == "POST":
-        try:
-            data = request.get_json()
+        db.session.add(prop_firm)
+        db.session.commit()
 
-            # Create a new prop firm
-            prop_firm = PropFirm(
-                name=data.get("name"),
-                full_balance=float(data.get("full_balance", 0)),
-                available_balance=float(data.get("available_balance", 0)),
-                dowdown_percentage=float(data.get("dowdown_percentage", 0)),
-                is_active=data.get("is_active", False),
-                username=data.get("username"),
-                password=data.get("password"),
-                ip_address=data.get("ip_address"),
-                port=data.get("port"),
-                platform_type=data.get("platform_type"),
-            )
-
-            db.session.add(prop_firm)
-            db.session.commit()
-
-            return (
-                jsonify(
-                    {
-                        "status": "success",
-                        "message": "Prop firm created successfully",
-                        "prop_firm": prop_firm.to_dict(),
-                    }
-                ),
-                201,
-            )
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({"status": "error", "message": str(e)}), 400
+        return (
+            jsonify(
+                {
+                    "status": "success",
+                    "message": "Prop firm created successfully",
+                    "prop_firm": prop_firm.to_dict(),
+                }
+            ),
+            201,
+        )
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 400
 
 
+@login_required
+@bp.route("/", methods=["GET"])
+def get_prop_firms():
+    # First query: Get all prop firms
+    prop_firms = PropFirm.query.all()
+
+    # Second query: Get all trade associations
+    associations = db.session.query(
+        PropFirmTrades.prop_firm_id,
+        PropFirmTrades.trade_id,
+        PropFirmTrades.platform_id,
+        PropFirmTrades.response,
+    ).all()
+
+    # Create a dictionary to group trade associations by prop firm
+    trade_map = {}
+    for assoc in associations:
+        prop_firm_id = assoc.prop_firm_id
+        if prop_firm_id not in trade_map:
+            trade_map[prop_firm_id] = []
+
+        trade_map[prop_firm_id].append(
+            {
+                "trade_id": assoc.trade_id,
+                "platform_id": assoc.platform_id,
+                "response": assoc.response,
+            }
+        )
+
+    # Build response with combined data
+    return jsonify(
+        [
+            {
+                "id": pf.id,
+                "name": pf.name,
+                "full_balance": pf.full_balance,
+                "available_balance": pf.available_balance,
+                "dowdown_percentage": pf.dowdown_percentage,
+                "username": pf.username,
+                "password": pf.password,
+                "ip_address": pf.ip_address,
+                "port": pf.port,
+                "platform_type": pf.platform_type,
+                "is_active": pf.is_active,
+                "created_at": pf.created_at.isoformat() if pf.created_at else None,
+                "trades": trade_map.get(pf.id, []),
+            }
+            for pf in prop_firms
+        ]
+    )
+
+
+@login_required
 @bp.route("/<int:prop_firm_id>", methods=["DELETE", "GET"])
 def delete_get_update_prop_firm(prop_firm_id):
     prop_firm = db.session.get(PropFirm, prop_firm_id)
@@ -115,6 +118,7 @@ def delete_get_update_prop_firm(prop_firm_id):
     return jsonify(prop_firm.to_dict())
 
 
+@login_required
 @bp.route("/<int:prop_firm_id>/trades", methods=["GET"])
 def trades_for_prop_firm(prop_firm_id):
     prop_firm = db.session.get(PropFirm, prop_firm_id)
@@ -137,6 +141,7 @@ def trades_for_prop_firm(prop_firm_id):
     return jsonify({"prop_firm": prop_firm.to_dict(), "trades": trades_data})
 
 
+@login_required
 @bp.route("/<int:prop_firm_id>", methods=["PUT"])
 def update_prop_firm(prop_firm_id):
     try:
@@ -189,6 +194,7 @@ def update_prop_firm(prop_firm_id):
         return jsonify({"error": str(e)}), 400
 
 
+@login_required
 @bp.route("/<int:prop_firm_id>/trade_pairs", methods=["GET", "POST"])
 def manage_trade_pairs(prop_firm_id):
     prop_firm = db.session.get(PropFirm, prop_firm_id)

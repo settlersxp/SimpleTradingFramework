@@ -27,8 +27,7 @@
         const action = currentlyActive ? "remove" : "add";
 
         try {
-            const response = await fetch("/prop_firms/manage", {
-                // Use relative path to the new +server.ts
+            const response = await fetch("/api/prop_firms/manage", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
