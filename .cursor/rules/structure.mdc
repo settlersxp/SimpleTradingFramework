@@ -4,8 +4,8 @@ globs:
 alwaysApply: false
 ---
 # Structure
-- The server side is inside the /app folder
-- The client side is inside the /frontend folder
+- The python server side is inside the /app folder
+- The sveltekit client side is inside the /frontend folder
     
 # Database:
 - Is SQLite

@@ -15,7 +15,7 @@
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <a
-                            href="/prop_firms/create"
+                            href="/prop_firms/register"
                             class="relative block p-6 border border-gray-300 rounded-lg hover:border-gray-400 bg-white shadow-sm hover:shadow-md transition-all"
                         >
                             <h3 class="text-lg font-medium text-indigo-600">
