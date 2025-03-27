@@ -10,20 +10,14 @@
 
     // Effect to sync server data with client store
     $effect(() => {
-        // Access the user data directly from the 'data' prop
-        const serverUser = data.user;
-
-        // Check if serverUser exists and is different from the store's user
-        if (
-            serverUser &&
-            JSON.stringify(serverUser) !== JSON.stringify(auth.$user)
-        ) {
-            // Update client state with server data
-            auth.setUser(serverUser);
-        } else if (!serverUser && auth.$user !== null) {
-            // Handle case where server says no user, but store still has one
-            auth.setUser(null);
-        }
+        console.log("Layout effect running with data.user:", data.user);
+        auth.setUser(data.user);
+        // Add log to see store state right after calling setUser in the effect
+        console.log("Store state after setUser in effect:", {
+            user: auth.$user,
+            isLoading: auth.$isLoading,
+            isAuthenticated: auth.$isAuthenticated,
+        });
     });
 </script>
 

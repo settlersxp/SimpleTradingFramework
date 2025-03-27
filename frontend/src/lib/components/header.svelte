@@ -6,10 +6,6 @@
     $effect(() => {
         console.log(page);
     });
-
-    function isActive(path: string) {
-        return page.url.pathname === path || page.route.id?.includes(path);
-    }
 </script>
 
 <nav>

@@ -1,11 +1,4 @@
 <script lang="ts">
-    import { logout } from "$lib/api/auth";
-    import { goto } from "$app/navigation";
-
-    async function handleLogout() {
-        await logout();
-        goto("/login");
-    }
 
     // Define routes for navigation items
     const navItems = [
