@@ -9,7 +9,7 @@ user_prop_firms_bp = Blueprint('user_prop_firms', __name__)
 @user_prop_firms_bp.route('/user/prop_firms', methods=['GET'])
 @login_required
 def get_user_prop_firms(user):
-    prop_firms = [pf.to_dict() for pf in user.prop_firms]
+    prop_firms = [pf.to_dict() for pf in user.get_prop_firms()]
     return jsonify({'prop_firms': prop_firms}), 200
 
 @user_prop_firms_bp.route('/user/prop_firms/<int:prop_firm_id>', methods=['POST'])
