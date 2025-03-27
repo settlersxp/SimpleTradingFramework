@@ -1,5 +1,4 @@
 <script lang="ts">
-
     // Define routes for navigation items
     const navItems = [
         {
@@ -14,7 +13,7 @@
         },
         {
             name: "Trade Pairs",
-            path: "/trade_pairs/list",
+            path: "/trade_pairs",
             endpoint: "trade_pairs.index",
         },
         {
