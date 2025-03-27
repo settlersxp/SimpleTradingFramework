@@ -67,36 +67,57 @@ export const handle: Handle = async ({ event, resolve }) => {
 
             console.log(`Proxying request to: ${targetUrl}`);
 
+            // Get session_id (using the correct cookie name 'session') and user_id from cookies
+            const sessionId = event.cookies.get('session');
+            const userId = event.cookies.get('user_id');
+
+            // Clone existing headers and add authentication headers if cookies exist
+            const requestHeaders = new Headers(event.request.headers);
+            if (sessionId && userId) {
+                requestHeaders.set('X-Session-ID', sessionId);
+                requestHeaders.set('X-User-ID', userId);
+                console.log('Added auth headers from cookies'); // Optional: for debugging
+            } else {
+                // Log which cookie might be missing for easier debugging
+                console.log(`Auth cookies not found (session: ${!!sessionId}, user_id: ${!!userId}), forwarding without auth headers`);
+            }
+
             // Use event.fetch instead of global fetch
             const response = await event.fetch(targetUrl, {
                 method: event.request.method,
-                headers: event.request.headers,
+                // Use the modified headers
+                headers: requestHeaders, // <-- Use the new headers object
                 body: event.request.method !== 'GET' && event.request.method !== 'HEAD'
                     ? await event.request.clone().arrayBuffer()
                     : undefined,
-                credentials: 'include'
+                credentials: 'include' // Keep this if you rely on other cookies being forwarded
             });
 
             // Copy all headers from the backend response
-            const headers = new Headers();
+            const responseHeaders = new Headers(); // Renamed to avoid conflict
             response.headers.forEach((value, key) => {
-                headers.append(key, value);
+                // Avoid duplicating CORS headers if already set by backend
+                if (!key.toLowerCase().startsWith('access-control-')) {
+                    responseHeaders.append(key, value);
+                }
             });
 
-            // Add CORS headers if needed
+            // Add CORS headers if needed (ensure origin check is robust)
             if (origin && ALLOWED_ORIGINS.includes(origin)) {
-                headers.append('Access-Control-Allow-Origin', origin);
-                headers.append('Access-Control-Allow-Credentials', 'true');
+                responseHeaders.set('Access-Control-Allow-Origin', origin); // Use set instead of append for single origin
+                responseHeaders.set('Access-Control-Allow-Credentials', 'true');
             }
 
             // Create a new response with the headers and body from the backend
             return new Response(response.body, {
                 status: response.status,
                 statusText: response.statusText,
-                headers
+                headers: responseHeaders // <-- Use the new response headers object
             });
         } catch (error) {
             console.error('Error proxying request:', error);
+            // Return a generic error response
+            return new Response('Error proxying request', { status: 500 });
         }
     }
 

@@ -4,7 +4,7 @@
     let { data, children } = $props();
 
     $effect(() => {
-        console.log(data);
+        console.log("user_data", data);
     });
 </script>
 

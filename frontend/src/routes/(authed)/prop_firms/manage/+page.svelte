@@ -1,87 +1,76 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    // Removed onMount and direct API imports for initial load
+    import type { PropFirm } from "../../../../lib/types/prop_firms";
 
-    import {
-        getUserPropFirms,
-        addPropFirmToUser,
-        removePropFirmFromUser,
-    } from "$lib/api/user_prop_firms";
-    import type { PropFirm } from "$lib/api/prop_firms";
-    import { getAllPropFirms } from "$lib/api/prop_firms";
-    let userPropFirms: PropFirm[] = [];
-    let allPropFirms: PropFirm[] = [];
-    let isLoading = true;
-    let error = "";
-    let successMessage = "";
+    let { data } = $props(); // Get data from +page.ts load function
 
-    onMount(async () => {
-        await loadData();
-    });
+    // Use $state for reactive variables
+    let userPropFirms = $state<PropFirm[]>(data.userPropFirms || []);
+    let allPropFirms = $state<PropFirm[]>(data.allPropFirms || []);
+    let isLoading = $state(false); // For actions, initial load handled by SvelteKit
+    let initialError = $state(data.error || ""); // Error from initial load
+    let actionError = $state(""); // Error from add/remove actions
+    let successMessage = $state("");
 
-    async function loadData() {
-        isLoading = true;
-        error = "";
-        successMessage = "";
-
-        try {
-            // Load user's prop firms
-            const userResponse = await getUserPropFirms();
-            if (userResponse.error) {
-                error = userResponse.error;
-            } else {
-                userPropFirms = userResponse.prop_firms || [];
-            }
-
-            // Load all prop firms
-            const allResponse = await getAllPropFirms();
-            if (allResponse.error) {
-                error = allResponse.error;
-            } else {
-                allPropFirms = allResponse.prop_firms || [];
-            }
-        } catch (err) {
-            error = "Failed to load prop firms";
-        } finally {
-            isLoading = false;
-        }
-    }
+    // $derived state for checking active status reactively
+    const userPropFirmIds = $derived(new Set(userPropFirms.map((pf) => pf.id)));
 
     function isActive(propFirm: PropFirm): boolean {
-        return userPropFirms.some((pf) => pf.id === propFirm.id);
+        return userPropFirmIds.has(propFirm.id);
     }
 
     async function togglePropFirm(propFirm: PropFirm) {
-        error = "";
+        actionError = "";
         successMessage = "";
         isLoading = true;
+        const currentlyActive = isActive(propFirm);
+        const action = currentlyActive ? "remove" : "add";
 
         try {
-            if (isActive(propFirm)) {
-                // Remove prop firm
-                const response = await removePropFirmFromUser(propFirm.id);
-                if (response.error) {
-                    error = response.error;
-                } else {
-                    successMessage = `Removed ${propFirm.name} from your active prop firms`;
-                }
+            const response = await fetch("/prop_firms/manage", {
+                // Use relative path to the new +server.ts
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    action: action,
+                    propFirmId: propFirm.id,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                actionError =
+                    result.message ||
+                    `Failed to ${action} prop firm. Status: ${response.status}`;
             } else {
-                // Add prop firm
-                const response = await addPropFirmToUser(propFirm.id);
-                if (response.error) {
-                    error = response.error;
+                successMessage =
+                    result.message ||
+                    `${action === "add" ? "Added" : "Removed"} ${propFirm.name} successfully`;
+                // Update local state directly for instant UI feedback
+                if (action === "add") {
+                    userPropFirms.push(propFirm);
+                    // Ensure reactivity by reassigning (though push might trigger in Svelte 5)
+                    userPropFirms = userPropFirms;
                 } else {
-                    successMessage = `Added ${propFirm.name} to your active prop firms`;
+                    userPropFirms = userPropFirms.filter(
+                        (pf) => pf.id !== propFirm.id,
+                    );
                 }
             }
-
-            // Reload data
-            await loadData();
-        } catch (err) {
-            error = "An unexpected error occurred";
+        } catch (err: any) {
+            actionError =
+                err.message ||
+                "An unexpected error occurred during the action.";
+            console.error(err);
         } finally {
             isLoading = false;
         }
     }
+
+    // No loadData function needed anymore
 </script>
 
 <header>
@@ -94,12 +83,23 @@
 <main>
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="px-4 py-8 sm:px-0">
-            {#if error}
+            {#if initialError}
                 <div class="rounded-md bg-red-50 p-4 mb-6">
                     <div class="flex">
                         <div class="ml-3">
                             <h3 class="text-sm font-medium text-red-800">
-                                {error}
+                                Error loading data: {initialError}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            {/if}
+            {#if actionError}
+                <div class="rounded-md bg-red-50 p-4 mb-6">
+                    <div class="flex">
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">
+                                {actionError}
                             </h3>
                         </div>
                     </div>
@@ -118,16 +118,10 @@
                 </div>
             {/if}
 
-            {#if isLoading}
-                <div class="flex justify-center py-12">
-                    <div
-                        class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"
-                    ></div>
-                </div>
-            {:else}
+            {#if !initialError}
                 <div class="bg-white shadow overflow-hidden sm:rounded-md">
                     <ul class="divide-y divide-gray-200">
-                        {#each allPropFirms as propFirm}
+                        {#each allPropFirms as propFirm (propFirm.id)}
                             <li>
                                 <div class="px-4 py-4 sm:px-6">
                                     <div
@@ -144,15 +138,22 @@
                                             <button
                                                 onclick={() =>
                                                     togglePropFirm(propFirm)}
+                                                disabled={isLoading}
                                                 class={`px-3 py-1 rounded-md text-sm font-medium ${
                                                     isActive(propFirm)
                                                         ? "bg-green-100 text-green-800 hover:bg-green-200"
                                                         : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                                                }`}
+                                                } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                                             >
-                                                {isActive(propFirm)
-                                                    ? "Active"
-                                                    : "Inactive"}
+                                                {#if isLoading && isActive(propFirm)}
+                                                    Removing...
+                                                {:else if isLoading && !isActive(propFirm)}
+                                                    Adding...
+                                                {:else if isActive(propFirm)}
+                                                    Active
+                                                {:else}
+                                                    Inactive
+                                                {/if}
                                             </button>
                                         </div>
                                     </div>
@@ -163,14 +164,15 @@
                                             <p
                                                 class="flex items-center text-sm text-gray-500"
                                             >
-                                                Platform: {propFirm.platform_type}
+                                                Platform: {propFirm.platform_type ??
+                                                    "N/A"}
                                             </p>
                                             <p
                                                 class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6"
                                             >
-                                                Balance: ${propFirm.full_balance.toFixed(
+                                                Balance: ${propFirm.full_balance?.toFixed(
                                                     2,
-                                                )}
+                                                ) ?? "N/A"}
                                             </p>
                                         </div>
                                     </div>
@@ -197,6 +199,15 @@
                     >
                         Create New Prop Firm
                     </a>
+                </div>
+            {/if}
+            {#if isLoading && !initialError}
+                <div
+                    class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50"
+                >
+                    <div
+                        class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"
+                    ></div>
                 </div>
             {/if}
         </div>

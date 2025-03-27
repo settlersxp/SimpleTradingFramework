@@ -4,7 +4,7 @@
     import Logo from "./Logo.svelte";
 
     $effect(() => {
-        console.log(page);
+        console.log("page", page);
     });
 </script>
 
