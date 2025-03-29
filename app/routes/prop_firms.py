@@ -6,7 +6,9 @@ from app.models.trade_pairs import TradePairs
 from app.models.trade_association import PropFirmTrades
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app.routes.auth import login_required
+
 bp = Blueprint("prop_firms", __name__)
+
 
 @login_required
 @bp.route("/create", methods=["POST"])

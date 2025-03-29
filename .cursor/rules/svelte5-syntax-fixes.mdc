@@ -12,16 +12,16 @@ alwaysApply: true
 - Uses Tailwind CSS
 - Reusable components are in in /frontend/src/lib/components
 - Reusable stores are in in /frontend/src/lib/stores
+- Vite endpoints code are in /frontend/src/routes/api
 - Svelte5 code which requires authenticated users is in /frontend/src/routes/(authed)/
 - Svelte5 code which requires anonymous users is in /frontend/src/routes/
-- Vite server side code must be in the /frontend/api folder and URL path must reflect the folder structure
 - New node models are installed with "npm" and must be added in /frontend/package.json
 
 # Design flow:
 1. Create a frontend API if one doesn't exist yet
 2. For every new component create a frontend type Prop if one doesn't exist yet
+3. If the component exists and doesn't have a type 
 3. Code using Svelte5 runes
 4. Never use <slot></slot> because is deprecated. Always use {@render ...} when required to render a #snippet
 4. Create the frontend logic inside the Svelte5 component
 5. Create the UI
-6. Create the Vite logic inside the /frontend/api folder. Each URI segment match be the folder with the same name
