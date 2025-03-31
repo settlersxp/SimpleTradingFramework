@@ -130,14 +130,9 @@ class FlaskApp:
             if request.headers.get("User-Agent") == "Go-http-client":
                 request_logger.info(json.dumps(log_data, indent=2))
 
-            # ignore the get requests
-            if request.method == "GET":
-                return
-
             for handler in request_logger.handlers:
                 handler.flush()
 
-            safe_log_to_file(f"Request: {json.dumps(log_data)}")
 
         @self.app.after_request
         def after_request(response):
@@ -166,14 +161,8 @@ class FlaskApp:
             if response.headers.get("User-Agent") == "Go-http-client":
                 request_logger.info(json.dumps(log_data, indent=2))
 
-            # ignore the get requests
-            if request.method == "GET":
-                return response
-
             for handler in request_logger.handlers:
                 handler.flush()
-
-            safe_log_to_file(f"Response: {json.dumps(log_data)}")
 
             return response
 

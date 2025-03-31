@@ -1,4 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
+// Assuming Node 18+ where fetch is global.
+// If using older Node or for explicit clarity, you might install and import node-fetch:
+// import fetch from 'node-fetch';
 
 const ALLOWED_ORIGINS = [
     'http://localhost:5173',
@@ -8,10 +11,10 @@ const ALLOWED_ORIGINS = [
 ];
 
 // Function to get the current backend URL based on environment
-async function getBackendUrl(fetch = globalThis.fetch): Promise<string> {
+async function getBackendUrl(fetchFn = globalThis.fetch): Promise<string> {
     try {
-        // Use the passed fetch function instead of global fetch
-        const response = await fetch('http://localhost:5173/api/environment/set', {
+        // Use the passed fetch function (which might be event.fetch or globalThis.fetch)
+        const response = await fetchFn('http://localhost:5173/api/environment/set', {
             method: 'GET',
             headers: {
                 'Accept': 'application/json'
@@ -57,66 +60,95 @@ export const handle: Handle = async ({ event, resolve }) => {
         return resolve(event);
     }
 
-    // If URL starts with python, forward it to backend
+    // If URL starts with python, forward it to backend using standard fetch
     if (event.url.pathname.startsWith('/python/')) {
 
         try {
+            // Use event.fetch for getting backend URL as it's an internal call conceptually
             const backendUrl = await getBackendUrl(event.fetch);
             const pathWithoutPython = event.url.pathname.replace(/^\/python/, '/api');
             const targetUrl = `${backendUrl}${pathWithoutPython}${event.url.search}`;
 
-            console.log(`Proxying request to: ${targetUrl}`);
+            console.log(`Proxying request using standard fetch to: ${targetUrl}`);
 
-            // Get session_id (using the correct cookie name 'session') and user_id from cookies
             const sessionId = event.cookies.get('session');
             const userId = event.cookies.get('user_id');
 
-            // Clone existing headers and add authentication headers if cookies exist
-            const requestHeaders = new Headers(event.request.headers);
-            if (sessionId && userId) {
-                requestHeaders.set('X-Session-ID', sessionId);
-                requestHeaders.set('X-User-ID', userId);
-                console.log('Added auth headers from cookies'); // Optional: for debugging
-            } else {
-                // Log which cookie might be missing for easier debugging
-                console.log(`Auth cookies not found (session: ${!!sessionId}, user_id: ${!!userId}), forwarding without auth headers`);
-            }
+            // --- Manually Construct Headers ---
+            const requestHeaders = new Headers();
 
-            // Use event.fetch instead of global fetch
-            const response = await event.fetch(targetUrl, {
-                method: event.request.method,
-                // Use the modified headers
-                headers: requestHeaders, // <-- Use the new headers object
-                body: event.request.method !== 'GET' && event.request.method !== 'HEAD'
-                    ? await event.request.clone().arrayBuffer()
-                    : undefined,
-                credentials: 'include' // Keep this if you rely on other cookies being forwarded
-            });
-
-            // Copy all headers from the backend response
-            const responseHeaders = new Headers(); // Renamed to avoid conflict
-            response.headers.forEach((value, key) => {
-                // Avoid duplicating CORS headers if already set by backend
-                if (!key.toLowerCase().startsWith('access-control-')) {
-                    responseHeaders.append(key, value);
+            // Copy *most* headers from the original request
+            // Be selective: avoid headers like Host, Connection, keep-alive, etc.
+            // that are connection-specific or might break the proxy.
+            const headersToSkip = ['host', 'connection', 'keep-alive', 'transfer-encoding', 'content-length', 'cookie']; // Add others if needed
+            event.request.headers.forEach((value, key) => {
+                if (!headersToSkip.includes(key.toLowerCase())) {
+                    requestHeaders.set(key, value);
                 }
             });
 
-            // Add CORS headers if needed (ensure origin check is robust)
-            if (origin && ALLOWED_ORIGINS.includes(origin)) {
-                responseHeaders.set('Access-Control-Allow-Origin', origin); // Use set instead of append for single origin
-                responseHeaders.set('Access-Control-Allow-Credentials', 'true');
+            // Add custom auth headers
+            if (sessionId && userId) {
+                requestHeaders.set('X-Session-ID', sessionId);
+                requestHeaders.set('X-User-ID', userId);
+                console.log('Added auth X-headers');
+            } else {
+                console.log(`Auth cookies not found (session: ${!!sessionId}, user_id: ${!!userId}), forwarding without X-headers`);
             }
 
-            // Create a new response with the headers and body from the backend
-            return new Response(response.body, {
-                status: response.status,
-                statusText: response.statusText,
-                headers: responseHeaders // <-- Use the new response headers object
+            // --- Handle Body ---
+            let bodyToSend: BodyInit | null = null;
+            if (event.request.method !== 'GET' && event.request.method !== 'HEAD') {
+                // Try streaming the body from the clone first
+                bodyToSend = event.request.clone().body;
+                // If streaming causes issues, fallback to ArrayBuffer:
+                // try {
+                //    bodyToSend = await event.request.clone().arrayBuffer();
+                // } catch (err) {
+                //     console.error("Hooks: Failed to read request body for proxy:", err);
+                //     return new Response("Failed to read request body", { status: 500 });
+                // }
+            }
+
+            // --- Use standard 'fetch' ---
+            const backendResponse = await fetch(targetUrl, { // Use global fetch
+                method: event.request.method,
+                headers: requestHeaders,
+                body: bodyToSend,
+                // Required for request bodies in Node fetch
+                duplex: 'half'
+                // `credentials: 'include'` is NOT used with standard fetch; cookies handled manually above if needed
             });
+
+            // --- Process Backend Response ---
+            const responseHeaders = new Headers();
+            backendResponse.headers.forEach((value, key) => {
+                // Avoid copying hop-by-hop headers or problematic ones
+                const lowerKey = key.toLowerCase();
+                if (lowerKey !== 'content-encoding' && lowerKey !== 'transfer-encoding' && lowerKey !== 'connection') {
+                    // Also avoid duplicating CORS headers if already set by backend
+                    if (!lowerKey.startsWith('access-control-')) {
+                        responseHeaders.append(key, value);
+                    }
+                }
+            });
+
+            // Add CORS headers (ensure origin check is robust)
+            if (origin && ALLOWED_ORIGINS.includes(origin)) {
+                responseHeaders.set('Access-Control-Allow-Origin', origin);
+                responseHeaders.set('Access-Control-Allow-Credentials', 'true');
+                // Add other CORS headers from OPTIONS response if needed for the actual response
+                responseHeaders.set('Access-Control-Expose-Headers', '*'); // Or be more specific
+            }
+
+            return new Response(backendResponse.body, {
+                status: backendResponse.status,
+                statusText: backendResponse.statusText,
+                headers: responseHeaders
+            });
+
         } catch (error) {
-            console.error('Error proxying request:', error);
-            // Return a generic error response
+            console.error('Error proxying request with standard fetch:', error);
             return new Response('Error proxying request', { status: 500 });
         }
     }

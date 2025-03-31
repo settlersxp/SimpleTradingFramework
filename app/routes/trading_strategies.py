@@ -32,7 +32,7 @@ def get_trading_strategy(strategy_id):
 
 
 @login_required
-@bp.route("/", methods=["POST"])
+@bp.route("/", methods=["POST"], strict_slashes=False)
 def create_trading_strategy():
     """Create a new trading strategy"""
     try:
@@ -152,7 +152,7 @@ def get_user_trading_strategies(user_id):
 
 
 @login_required
-@bp.route("/user/<int:user_id>/associate", methods=["POST"])
+@bp.route("/user/<int:user_id>", methods=["POST"])
 def associate_user_with_strategies(user_id):
     """Associate a user with multiple trading strategies"""
     try:

@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { TradePair } from "$lib/types/trade_pairs";
-    import TradePairList from "./TradePairList.svelte";
+    import TradePairList from "$lib/components/TradePairList.svelte";
     import { BROWSER } from "esm-env";
 
     let { initialPairs = [] }: { initialPairs: TradePair[] } = $props();
