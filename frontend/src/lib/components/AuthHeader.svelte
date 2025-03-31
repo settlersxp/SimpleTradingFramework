@@ -22,6 +22,16 @@
             endpoint: "trades.list_trades",
         },
         {
+            name: "Trading Strategies",
+            path: "/trading_strategies",
+            endpoint: "trading_strategies.index",
+        },
+        {
+            name: "My Strategies",
+            path: "/trading_strategies/my",
+            endpoint: "trading_strategies.my",
+        },
+        {
             name: "Profiles",
             path: "/profiles",
             endpoint: "profiles.index",

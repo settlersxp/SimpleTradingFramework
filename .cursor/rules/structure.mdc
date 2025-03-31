@@ -1,22 +1,38 @@
 ---
+description: 
+globs: 
+alwaysApply: false
+---
+---
 description: project structure
 globs: 
 alwaysApply: false
 ---
 # Structure
 - The python server side is inside the /app folder
-- The sveltekit client side is inside the /frontend folder
+- The SvelteKit client side is inside the /frontend folder
+
+Svelte syntax:
+- Always use onclick instead of on:click
     
 # Database:
 - Is SQLite
-- When the structure is changed, a "flask db migrate" will be run
+- Do not generate a SQLAlchemy migration when new python models are created
 
 # Server side:
 - Uses Python and Flask
 - Uses SQLAlchemy to interact with the database
 - The models are should be put inside /app/models
 - The endpoints should be put inside /app/routes
-- Always install the python dependencies by adding them to requirements.txt
+
+# Client side:
+- Uses SvelteKit
+- Uses Tailwind CSS
+- Reusable components are in in /frontend/src/lib/components
+- Reusable stores are in in /frontend/src/lib/stores
+- Vite endpoints code are in /frontend/src/routes/api
+- Svelte5 code is in /frontend/src/routes
+- New node models are installed with "npm" and must be added in /frontend/package.json
 
 # Solution flow:
 1. Code the SQLAlchemy model first
