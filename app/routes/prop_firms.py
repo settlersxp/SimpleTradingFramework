@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request, render_template, redirect, url_for, flash
 from app.models.prop_firm import PropFirm
 from app import db
-from app.forms.prop_firm import PropFirmForm
 from app.models.trade_pairs import TradePairs
 from app.models.trade_association import PropFirmTrades
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
