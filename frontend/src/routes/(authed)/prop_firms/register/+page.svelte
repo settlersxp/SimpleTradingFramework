@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { onMount } from "svelte";
     import { goto } from "$app/navigation";
 
     type PropFirmForm = {
@@ -67,7 +66,7 @@
                         : form.port,
             };
 
-            const response = await fetch("/api/prop_firms", {
+            const response = await fetch("/api/prop_firms/create", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
