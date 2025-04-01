@@ -117,7 +117,7 @@ class FlaskApp:
             }
 
             # Log and flush immediately only if the user agent is "Go-http-client"
-            if "Go-http-client" in request.headers.get("User-Agent"):
+            if request.headers.get("User-Agent") and "Go-http-client" in request.headers.get("User-Agent"):
                 request_logger.info(json.dumps(log_data, indent=2))
 
             for handler in request_logger.handlers:
@@ -148,7 +148,7 @@ class FlaskApp:
             }
 
             # Log and flush immediately only if the user agent is "Go-http-client"
-            if "Go-http-client" in response.headers.get("User-Agent"):
+            if response.headers.get("User-Agent") and "Go-http-client" in response.headers.get("User-Agent"):
                 request_logger.info(json.dumps(log_data, indent=2))
 
             for handler in request_logger.handlers:
