@@ -2,7 +2,7 @@
     // Removed TradePairComponentManager import
     import type { PageData } from "./$types";
     import type { TradePair } from "$lib/types/trade_pairs";
-    import TradePairList from "$lib/components/TradePairList.svelte";
+    import TradePairList from "./TradePairList.svelte";
 
     let { data }: { data: PageData } = $props();
 

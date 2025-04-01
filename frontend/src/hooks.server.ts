@@ -99,15 +99,7 @@ export const handle: Handle = async ({ event, resolve }) => {
             // --- Handle Body ---
             let bodyToSend: BodyInit | null = null;
             if (event.request.method !== 'GET' && event.request.method !== 'HEAD') {
-                // Try streaming the body from the clone first
                 bodyToSend = event.request.clone().body;
-                // If streaming causes issues, fallback to ArrayBuffer:
-                // try {
-                //    bodyToSend = await event.request.clone().arrayBuffer();
-                // } catch (err) {
-                //     console.error("Hooks: Failed to read request body for proxy:", err);
-                //     return new Response("Failed to read request body", { status: 500 });
-                // }
             }
 
             // --- Use standard 'fetch' ---
@@ -151,6 +143,24 @@ export const handle: Handle = async ({ event, resolve }) => {
             console.error('Error proxying request with standard fetch:', error);
             return new Response('Error proxying request', { status: 500 });
         }
+    }
+
+    // --- Populate locals for SvelteKit routes ---
+    const userIdCookie = event.cookies.get('user_id');
+    if (userIdCookie) {
+        try {
+            const userId = parseInt(userIdCookie, 10);
+            if (!isNaN(userId)) {
+                event.locals.user = { id: userId };
+                console.log(`Populated event.locals.user with ID: ${userId}`);
+            } else {
+                console.warn(`Failed to parse user_id cookie: '${userIdCookie}'`);
+            }
+        } catch (error) {
+            console.error('Error processing user_id cookie:', error);
+        }
+    } else {
+        console.log('user_id cookie not found, event.locals.user not set.');
     }
 
     const response = await resolve(event);

@@ -1,19 +1,5 @@
 import { getBackendUrl } from "$lib/stores/environment";
-
-export interface User {
-    id: number;
-    email: string;
-    created_at: string;
-    updated_at: string;
-    prop_firms: number[];
-}
-
-export interface AuthResponse {
-    message: string;
-    user?: User;
-    error?: string;
-    cookies?: string[];
-}
+import type { AuthResponse } from "$lib/types/AuthResponse";
 
 export async function logout(): Promise<AuthResponse> {
     try {
@@ -24,19 +10,6 @@ export async function logout(): Promise<AuthResponse> {
         return await response.json();
     } catch (error) {
         return { message: 'Logout failed', error: error instanceof Error ? error.message : 'Unknown error' };
-    }
-}
-
-export async function getCurrentUser(): Promise<AuthResponse> {
-    try {
-        console.log('getting current user');
-        const response = await fetch(`/api/auth/me`, {
-            credentials: 'include',
-        });
-
-        return await response.json();
-    } catch (error) {
-        return { message: 'Failed to get user', error: error instanceof Error ? error.message : 'Unknown error' };
     }
 }
 
