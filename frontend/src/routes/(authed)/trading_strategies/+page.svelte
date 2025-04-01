@@ -1,10 +1,297 @@
 <script lang="ts">
-    import TradingStrategyManager from "$lib/components/TradingStrategyManager.svelte";
+    import { enhance } from "$app/forms";
+    import type { TradingStrategy } from "$lib/types/TradingStrategy";
+    import { invalidateAll } from "$app/navigation";
+    import type { TradingStrategiesPageData } from "$lib/types/TradingStrategyPageData";
+    // Props: data from load function, form for action results
+    let { data }: { data: TradingStrategiesPageData } = $props();
+    let form: any = $state(); // Declare form as state
+
+    let editingStrategyId: number | null = $state(null);
+
+    // Reactive statements to access loaded data
+    let strategies = $derived(data.strategies);
+    let loading = $derived(data.loading);
+    let pageError = $derived(data.error); // Renamed to avoid conflict with form error
+
+    function startEditStrategy(strategy: TradingStrategy) {
+        editingStrategyId = strategy.id;
+    }
+
+    function cancelEdit() {
+        editingStrategyId = null;
+    }
+
+    function handleDelete(strategyId: number) {
+        if (confirm("Are you sure you want to delete this trading strategy?")) {
+            // Find the form associated with this delete button and submit it
+            const formElement = document.getElementById(
+                `delete-form-${strategyId}`,
+            ) as HTMLFormElement;
+            if (formElement) {
+                formElement.requestSubmit();
+            }
+        }
+    }
+
+    // Function to handle successful form submissions
+    function handleSuccess() {
+        editingStrategyId = null; // Close edit form on success
+        invalidateAll(); // Re-run load function to refresh data
+        // Clear potential form errors from previous submissions
+        // form = null; // No longer needed to manually clear, SvelteKit handles it with enhance
+    }
 </script>
 
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-8">Trading Strategies Management</h1>
-    <div class="bg-white rounded-lg shadow">
-        <TradingStrategyManager />
+    <div class="bg-white rounded-lg shadow p-6">
+        {#if pageError}
+            <div
+                class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4"
+                role="alert"
+            >
+                <p>{pageError}</p>
+            </div>
+        {/if}
+
+        {#if form?.error}
+            <div
+                class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4"
+                role="alert"
+            >
+                <p>Error: {form.error}</p>
+            </div>
+        {/if}
+
+        <!-- Add New Strategy Form -->
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Add New Trading Strategy</h2>
+            <form
+                method="POST"
+                action="?/create"
+                use:enhance={() => {
+                    return async ({ result }) => {
+                        if (result.type === "success") {
+                            handleSuccess();
+                            // Optionally clear form fields here if needed
+                            const formEl = document.querySelector(
+                                "#add-strategy-form",
+                            ) as HTMLFormElement;
+                            if (formEl) formEl.reset();
+                        }
+                    };
+                }}
+                id="add-strategy-form"
+            >
+                <div class="mb-4">
+                    <label
+                        class="block text-gray-700 text-sm font-bold mb-2"
+                        for="strategyName"
+                    >
+                        Strategy Name
+                    </label>
+                    <input
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        id="strategyName"
+                        name="name"
+                        type="text"
+                        placeholder="Enter strategy name"
+                        required
+                    />
+                </div>
+                <div class="mb-4">
+                    <label
+                        class="block text-gray-700 text-sm font-bold mb-2"
+                        for="strategyDescription"
+                    >
+                        Description (Optional)
+                    </label>
+                    <textarea
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+                        id="strategyDescription"
+                        name="description"
+                        placeholder="Enter strategy description"
+                    ></textarea>
+                </div>
+                <div class="flex items-center justify-between">
+                    <button
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        type="submit"
+                    >
+                        Add Strategy
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Strategies List -->
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8">
+            <h2 class="text-xl font-semibold mb-4">Trading Strategies</h2>
+
+            {#if loading}
+                <div class="text-center py-4">
+                    <p>Loading trading strategies...</p>
+                </div>
+            {:else if strategies.length === 0}
+                <div class="text-center py-4">
+                    <p>
+                        No trading strategies found. Add your first one above.
+                    </p>
+                </div>
+            {:else}
+                <div class="overflow-x-auto">
+                    <table class="w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="px-4 py-2 text-left">Name</th>
+                                <th class="px-4 py-2 text-left">Description</th>
+                                <th class="px-4 py-2 text-left">Created</th>
+                                <th class="px-4 py-2 text-left">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each strategies as strategy (strategy.id)}
+                                {#if editingStrategyId === strategy.id}
+                                    <tr class="bg-blue-50">
+                                        <td
+                                            class="border px-4 py-2"
+                                            colspan="4"
+                                        >
+                                            <form
+                                                method="POST"
+                                                action="?/update"
+                                                use:enhance={() => {
+                                                    return async ({
+                                                        result,
+                                                    }) => {
+                                                        if (
+                                                            result.type ===
+                                                            "success"
+                                                        ) {
+                                                            handleSuccess();
+                                                        }
+                                                    };
+                                                }}
+                                            >
+                                                <input
+                                                    type="hidden"
+                                                    name="id"
+                                                    value={strategy.id}
+                                                />
+                                                <div
+                                                    class="flex flex-wrap -mx-2 items-center"
+                                                >
+                                                    <div
+                                                        class="px-2 w-1/3 mb-2 md:mb-0"
+                                                    >
+                                                        <input
+                                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                            type="text"
+                                                            name="name"
+                                                            placeholder="Strategy name"
+                                                            value={strategy.name}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div
+                                                        class="px-2 w-1/3 mb-2 md:mb-0"
+                                                    >
+                                                        <input
+                                                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                                            type="text"
+                                                            name="description"
+                                                            placeholder="Description (optional)"
+                                                            value={strategy.description ||
+                                                                ""}
+                                                        />
+                                                    </div>
+                                                    <div
+                                                        class="px-2 w-1/3 flex"
+                                                    >
+                                                        <button
+                                                            type="submit"
+                                                            class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded mr-2 focus:outline-none focus:shadow-outline"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onclick={cancelEdit}
+                                                            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {:else}
+                                    <tr>
+                                        <td class="border px-4 py-2"
+                                            >{strategy.name}</td
+                                        >
+                                        <td class="border px-4 py-2"
+                                            >{strategy.description || "-"}</td
+                                        >
+                                        <td class="border px-4 py-2"
+                                            >{new Date(
+                                                strategy.created_at,
+                                            ).toLocaleDateString()}</td
+                                        >
+                                        <td class="border px-4 py-2">
+                                            <button
+                                                onclick={() =>
+                                                    startEditStrategy(strategy)}
+                                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mr-2 focus:outline-none focus:shadow-outline"
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <!-- Delete Form -->
+                                            <form
+                                                method="POST"
+                                                action="?/delete"
+                                                use:enhance={() => {
+                                                    return async ({
+                                                        result,
+                                                    }) => {
+                                                        if (
+                                                            result.type ===
+                                                            "success"
+                                                        ) {
+                                                            handleSuccess();
+                                                        }
+                                                    };
+                                                }}
+                                                class="inline-block"
+                                                id={`delete-form-${strategy.id}`}
+                                            >
+                                                <input
+                                                    type="hidden"
+                                                    name="id"
+                                                    value={strategy.id}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onclick={() =>
+                                                        handleDelete(
+                                                            strategy.id,
+                                                        )}
+                                                    class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {/if}
+                            {/each}
+                        </tbody>
+                    </table>
+                </div>
+            {/if}
+        </div>
     </div>
 </div>

@@ -12,6 +12,7 @@ alwaysApply: true
 - Uses Tailwind CSS
 - Reusable components are in in /frontend/src/lib/components
 - Reusable stores are in in /frontend/src/lib/stores
+- Types are located into /frontend/src/lib/types
 - Vite endpoints code are in /frontend/src/routes/api
 - Svelte5 code which requires authenticated users is in /frontend/src/routes/(authed)/
 - Svelte5 code which requires anonymous users is in /frontend/src/routes/
