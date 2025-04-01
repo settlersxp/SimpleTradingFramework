@@ -5,6 +5,7 @@ from app.models.trade_association import PropFirmTrades
 from app.models.trade_pairs import TradePairs
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app import db
+from app.models.user import User
 import json
 
 bp = Blueprint('trades_association', __name__)
@@ -45,8 +46,10 @@ def cancel_trade(trade, association, prop_firm):
         old_associations.delete()
         Trade.query.filter_by(id=old_trade.id).delete()
         print(f"Trade {old_trade.id} canceled successfully")
+        return old_trade.id
     else:
         print(f"Error canceling trade {old_trade.id}: {outcome.message}")
+        return None
 
 
 @staticmethod
@@ -58,43 +61,59 @@ def add_trade_associations(mt_string, create_trade=True):
         create_trade (bool): Flag indicating whether to create a new trade.
 
     Returns:
-        Trade: The created or updated trade object.
+        [Trade]: One trade for each prop firm of each user.
     """
+    trades = []
     trade = Trade.from_mt_string(mt_string)
 
     if create_trade:
         db.session.add(trade)
         db.session.commit()
 
-    # Check if the trade's ticker exists in trade_pairs
-    trade_pair = db.session.query(
-        TradePairs).filter_by(name=trade.ticker).first()
-    if not trade_pair:
-        # If ticker is not tracked, skip prop firm associations
-        return trade
+    # Now we can directly use prop_firm as it has the association
+    if trade.position_size == 0:
+        # get the prop firms with this trade
+        prop_firms = db.session.query(PropFirm).join(PropFirmTradePairAssociation).filter_by(trade_id=trade.id).all()
+        for prop_firm in prop_firms:
+            association = db.session.query(PropFirmTradePairAssociation).filter_by(
+                prop_firm_id=prop_firm.id,
+                trade_pair_id=trade.id
+            ).first()
+            trade_id = cancel_trade(trade, association, prop_firm)
+            if trade_id:
+                trades.append(trade_id)
+        return trades
 
-    # Add trade to prop firms that have this trade pair associated
-    prop_firms_with_associations = db.session.query(PropFirm).join(
-        PropFirmTradePairAssociation
-    ).filter(
-        PropFirmTradePairAssociation.trade_pair_id == trade_pair.id
-    ).all()
+    # for every user in the database, get only the active prop firms
+    all_users = db.session.query(User).all()
+    for user in all_users:
+        prop_firms = user.get_prop_firms()
+        for prop_firm in prop_firms:
+            # Check if the trade's ticker exists in trade_pairs
+            trade_pair = db.session.query(
+                TradePairs).filter_by(name=trade.ticker).first()
 
-    for prop_firm in prop_firms_with_associations:
-        # From PropFirmTradePairAssociation get the label
-        association = db.session.query(PropFirmTradePairAssociation).filter_by(
-            prop_firm_id=prop_firm.id,
-            trade_pair_id=trade_pair.id
-        ).first()
+            if not trade_pair:
+                print(f"Ticker {trade.ticker} not tracked by {prop_firm.name}")
+                # If ticker is not tracked, skip prop firm associations
+                continue
 
-        # Now we can directly use prop_firm as it has the association
-        if trade.position_size == 0:
-            cancel_trade(trade, association, prop_firm)
-            return
+            # Check if the prop firm has an association with the trade pair
+            association = db.session.query(PropFirmTradePairAssociation).filter_by(
+                prop_firm_id=prop_firm.id,
+                trade_pair_id=trade_pair.id
+            ).first()
 
-        # If association exists, use the label when placing the trade
-        outcome = prop_firm.trading.place_trade(trade, label=association.label)
-        if outcome.success:
+            if not association:
+                print(f"Trade pair not associated with {trade.ticker} and {prop_firm.name}")
+                continue
+
+            # If association exists, use the label when placing the trade
+            outcome = prop_firm.trading.place_trade(trade, label=association.label)
+            if not outcome.success:
+                print(f"Error placing trade {trade.id}: {outcome.message}")
+                continue
+
             # Add trade to prop firm with platform ID
             prop_firm_trade = PropFirmTrades(
                 prop_firm_id=prop_firm.id,
@@ -106,11 +125,10 @@ def add_trade_associations(mt_string, create_trade=True):
 
             prop_firm.update_available_balance(trade)
             print(f"Trade {outcome.details['request_id']} placed successfully")
-        else:
-            print(f"Error placing trade {trade.id}: {outcome.message}")
+            trades.append(trade)
 
-    db.session.commit()
-    return trade
+            db.session.commit()
+    return trades
 
 
 
@@ -145,10 +163,10 @@ def trades_association():
     elif request.method == 'POST':
         try:
             mt_string = request.get_data(as_text=True)
-            trade = add_trade_associations(mt_string)
+            trades = add_trade_associations(mt_string)
             return jsonify({
                 "status": "success",
-                "trade_id": trade.id
+                "trades": [trade.id for trade in trades]
             })
         except Exception as e:
             db.session.rollback()  # Rollback on error

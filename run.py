@@ -64,16 +64,6 @@ request_logger.info("Logger initialization test")
 fh.flush()
 
 
-def safe_log_to_file(message):
-    try:
-        with open(log_file_path, "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now().isoformat()} - {message}\n")
-            f.flush()
-            os.fsync(f.fileno())
-    except Exception as e:
-        print(f"Error writing to log file: {e}")
-
-
 class FlaskApp:
     _instance = None
 
@@ -171,17 +161,17 @@ class FlaskApp:
         def hello():
             return render_template("index.html")
 
-        @self.app.route("/open_positions", methods=["POST"])
+        @self.app.route("/open_positions", methods=["POST"], strict_slashes=False)
         def open_positions():
             # redirect to trades
             return redirect(url_for("trades.trades"))
 
-        @self.app.route("/trades", methods=["POST"])
+        @self.app.route("/trades", methods=["POST"], strict_slashes=False)
         def trades():
             # redirect to trades
             return redirect(url_for("trades.trades"))
 
-        @self.app.route("/receiveMessage", methods=["POST"])
+        @self.app.route("/receiveMessage", methods=["POST"], strict_slashes=False)
         def receive_message():
             # redirect to trades
             return redirect(url_for("trades.trades"))

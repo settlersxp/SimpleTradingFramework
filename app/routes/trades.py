@@ -44,10 +44,10 @@ def trades():
     elif request.method == 'POST':
         mt_string = request.get_data(as_text=True)
         try:
-            trade = add_trade_associations(mt_string)
+            trades = add_trade_associations(mt_string)
             return jsonify({
                 "status": "success",
-                "trade_id": trade.id
+                "trades": [trade.id for trade in trades]
             })
         except Exception as e:
             return jsonify({
@@ -151,11 +151,12 @@ def replay_trade(trade_id):
         )
         
         # Use the existing add_trade_associations function but without creating a new trade
-        add_trade_associations(mt_string, create_trade=False)
+        trades = add_trade_associations(mt_string, create_trade=False)
         
         return jsonify({
             "status": "success",
-            "message": "Trade replayed successfully"
+            "message": "Trade replayed successfully",
+            "trades": [trade.id for trade in trades]
         })
     except Exception as e:
         return jsonify({
@@ -184,8 +185,12 @@ def close_trade():
             f'"position_size":"{trade.position_size}"'
         )
         
-        add_trade_associations(mt_string, create_trade=False)
+        trades = add_trade_associations(mt_string, create_trade=False)
         
-        return jsonify({'message': 'Trade closed successfully'}), 200
+        return jsonify({
+            "status": "success",
+            "message": "Trade closed successfully",
+            "trades": [trade.id for trade in trades]
+        }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500

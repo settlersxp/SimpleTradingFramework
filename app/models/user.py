@@ -28,10 +28,6 @@ class User(db.Model):
     logged_at = db.Column(db.DateTime, default=datetime.utcnow)
     token = db.Column(db.String(120), nullable=True)
 
-    # Remove the SQLAlchemy relationship definition to avoid conflicts
-    # prop_firms = db.relationship('PropFirm', secondary=user_prop_firm,
-    #                              backref=db.backref('users', lazy='dynamic'))
-
     def __repr__(self):
         return f"<User {self.email}>"
 
