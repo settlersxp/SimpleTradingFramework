@@ -60,6 +60,8 @@ class MT5Trading(TradingInterface):
         Cancel a trade on MT5
         """
         try:
+            self.connect(self.credentials)
+
             result = mt5.Close(
                 symbol=old_trade_response[10][3], ticket=old_trade_response[2]
             )
@@ -169,6 +171,8 @@ class MT5Trading(TradingInterface):
 
     def _execute_trade(self, trade: "Trade", label: str) -> ExecuteTradeReturn:
         """Execute a trade with MT5"""
+        self.connect(self.credentials)
+        
         if not self.connected:
             # try to reconnect and in case of failure return the error
             self.connected = False
