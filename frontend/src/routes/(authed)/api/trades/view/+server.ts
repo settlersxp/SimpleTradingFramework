@@ -1,12 +1,12 @@
 // Router for the trades endpoint
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import type { RequestHandler } from '../$types';
 
 // Get all trades
 export const GET: RequestHandler = async ({ fetch }: { fetch: any }) => {
     try {
 
-        const response = await fetch(`/python/trades`);
+        const response = await fetch(`/python/trades/view`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

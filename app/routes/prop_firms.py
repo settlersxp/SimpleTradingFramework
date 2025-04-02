@@ -265,26 +265,3 @@ def manage_trade_pairs(prop_firm_id):
             return jsonify({"error": str(e)}), 400
 
 
-@bp.route("/view")
-def view_prop_firms():
-    prop_firms = PropFirm.query.all()
-    return render_template("prop_firms/prop_firms.html", prop_firms=prop_firms)
-
-
-@bp.route("/view/create", methods=["GET"])
-def create_prop_firm_view():
-    form = PropFirmForm()
-    return render_template("prop_firms/create_prop_firm.html", form=form)
-
-
-@bp.route("/<int:prop_firm_id>/edit", methods=["GET"])
-def edit_prop_firm(prop_firm_id):
-    prop_firm = db.session.get(PropFirm, prop_firm_id)
-    if not prop_firm:
-        flash("Prop Firm not found", "error")
-        return redirect(url_for("prop_firms.view_prop_firms"))
-
-    form = PropFirmForm(obj=prop_firm)
-    return render_template(
-        "prop_firms/edit_prop_firm.html", form=form, prop_firm=prop_firm
-    )
