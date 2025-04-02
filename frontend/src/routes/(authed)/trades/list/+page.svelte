@@ -1,21 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    type TradeWithFirm = {
-        id: number;
-        strategy: string;
-        order_type: string;
-        contracts: number;
-        ticker: string;
-        position_size: number;
-        created_at: string;
-        prop_firm: {
-            id: number;
-            name: string;
-            available_balance: number;
-            dowdown_percentage: number;
-        };
-    };
+    import type { TradeWithFirm } from "$lib/types/TradeWithFirm";
+    import TradeRow from "./TradeRow.svelte";
 
     let tradesWithFirms = $state<TradeWithFirm[]>([]);
     let loading = $state(true);
@@ -24,7 +11,7 @@
     onMount(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch("/api/trades/view");
+                const response = await fetch("/api/trades/list");
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -116,48 +103,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             {#each tradesWithFirms as trade}
-                                <tr class="hover:bg-gray-50 transition-colors">
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                        >{trade.id}</td
-                                    >
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                        >{trade.strategy}</td
-                                    >
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span
-                                            class="px-2 py-1 text-xs font-semibold rounded-full {trade.order_type ===
-                                            'buy'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-red-100 text-red-800'}"
-                                        >
-                                            {trade.order_type.toUpperCase()}
-                                        </span>
-                                    </td>
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                        >{trade.contracts.toFixed(3)}</td
-                                    >
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                        >{trade.ticker}</td
-                                    >
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                        >${trade.position_size.toFixed(2)}</td
-                                    >
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                        >{new Date(
-                                            trade.created_at,
-                                        ).toLocaleString()}</td
-                                    >
-                                    <td
-                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                        >{trade.prop_firm.name}</td
-                                    >
-                                </tr>
+                                <TradeRow {trade} />
                             {:else}
                                 <tr>
                                     <td

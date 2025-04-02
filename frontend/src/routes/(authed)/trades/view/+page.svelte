@@ -9,7 +9,7 @@
 
     onMount(async () => {
         try {
-            const response = await fetch("/api/trades/list");
+            const response = await fetch("/api/trades/view");
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -22,7 +22,6 @@
             loading = false;
         }
     });
-
 </script>
 
 <div class="min-h-screen bg-gray-100 p-8">
