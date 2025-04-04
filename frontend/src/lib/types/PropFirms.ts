@@ -1,3 +1,6 @@
+import type { Trade } from "./Trade";
+import type { TradePair } from "./TradePairs";
+
 export interface PropFirm {
     id: number;
     name: string;
@@ -13,7 +16,8 @@ export interface PropFirm {
     created_at: string; // ISO format string expected from backend
     // updated_at is not explicitly in the Python to_dict, but was in original TS
     updated_at?: string;
-    trades?: any[]; // Added from Python GET / response structure
+    trades?: Trade[]; // Added from Python GET / response structure
+    tradePairs?: TradePair[];
 }
 
 // Data for creating/updating a prop firm (Matches Python POST/PUT)
@@ -40,7 +44,7 @@ export interface UserPropFirmsResponse {
 // Response for GET /<id>/trades
 export interface PropFirmTradesResponse {
     prop_firm: PropFirm;
-    trades: any[]; // Replace 'any' with a specific Trade type if defined
+    trades: Trade[]; // Replace 'any' with a specific Trade type if defined
     error?: string; // Keep error field for potential backend errors
 }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { TradePair } from "$lib/types/trade_pairs";
+    import type { TradePair } from "$lib/types/TradePairs";
 
     type SaveEvent = { id: number; name: string };
     type DeleteEvent = number;

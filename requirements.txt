@@ -12,3 +12,4 @@ requests==2.31.0
 flask-wtf
 pytz
 Flask-Session
+MetaTrader5==5.0.45

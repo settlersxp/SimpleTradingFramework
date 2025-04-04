@@ -1,7 +1,7 @@
 import type { PageLoad } from './$types';
 
 // Assuming types are accessible, e.g., from a shared types file
-import type { PropFirm, PropFirmData } from '../../../../lib/types/prop_firms';
+import type { PropFirm, PropFirmData } from '../../../../lib/types/PropFirms';
 
 export const load: PageLoad = async ({ fetch: skFetch }) => { // Use the fetch provided by PageLoad
     let userPropFirms: any[] = []; // Use 'any' or import PropFirm type

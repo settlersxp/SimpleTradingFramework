@@ -1,10 +1,6 @@
 import { json, error as svelteKitError } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-// Assuming types are defined elsewhere, e.g., in a shared types file
-// If not, you'll need to define or import PropFirm, PropFirmData etc. here.
-import type { PropFirm, PropFirmData } from '../../../../../lib/types/prop_firms'; // Example path
-
 // Define the base URL for your Python backend API
 const PYTHON_API_BASE = '/python';
 

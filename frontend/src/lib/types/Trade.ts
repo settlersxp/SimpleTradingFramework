@@ -1,3 +1,5 @@
+import type { ExecuteTradeReturn } from './ExecuteTradeReturn';
+
 export type Trade = {
     id: number;
     strategy: string;
@@ -6,5 +8,5 @@ export type Trade = {
     ticker: string;
     position_size: number;
     created_at: string;
-    response: any;
+    response: ExecuteTradeReturn | null;
 };

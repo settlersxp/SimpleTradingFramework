@@ -1,51 +1,82 @@
 ---
-description: 
-globs: 
-alwaysApply: false
----
----
 description: project structure
 globs: 
 alwaysApply: false
 ---
-# Structure
-- The python server side is inside the /app folder
-- The SvelteKit client side is inside the /frontend folder
+# Project Overview
+- A trading framework with Python backend and SvelteKit frontend
+- The Python "server side" is inside the "/app" folder
+- The SvelteKit "client side" is inside the "/frontend" folder
+- Configuration files are in the root directory (config.py, gunicorn_config.py)
+- Development setup scripts available (dev_setup.sh/ps1, run_server.sh/ps1)
 
-Svelte syntax:
-- Always use onclick instead of on:click
-    
 # Database:
-- Is SQLite
-- Do not generate a SQLAlchemy migration when new python models are created
+- Uses SQLAlchemy but avoids migrations for model changes
+- Migrations and updates are done manually after the feature is functional
+- Database models are defined in /app/models
 
-# Server side:
-- Uses Python and Flask
-- Uses SQLAlchemy to interact with the database
-- The models are should be put inside /app/models
-- The endpoints should be put inside /app/routes
+# Server side (Python/Flask):
+## Core Structure:
+- Main application initialization in /app/__init__.py
+- API routes defined in /app/routes/
+- Database models in /app/models/
+- Trading logic in /app/trade_actions/ (dynamically loaded)
+- Main server entry point is run.py in root
+- Ignore the tests found in test_app.py. Do not add new ones, do not try to fix them.
 
-# Client side:
-- Uses SvelteKit
-- Uses Tailwind CSS
-- Reusable components are in in /frontend/src/lib/components
-- Reusable stores are in in /frontend/src/lib/stores
-- Vite endpoints code are in /frontend/src/routes/api
-- Svelte5 code is in /frontend/src/routes
-- New node models are installed with "npm" and must be added in /frontend/package.json
+## Development:
+- Requirements in requirements.txt (development) and requirementsProd.txt (production)
+- Uses Flask for API endpoints
+- Uses SQLAlchemy for database operations
 
-# Solution flow:
-1. Code the SQLAlchemy model first
-2. Adapt the existing SQLAlchemy
-3. Code the model logic inside the model
-4. Code the endpoint logic inside the backend endpoint
-5. Create a frontend API
-6. Create a frontend Prop
-7. Create the frontend logic inside the Svelte5 component
-8. Crate the UI
+# Client side (SvelteKit):
+## Core Structure:
+- Main SvelteKit app in /frontend/src/
+- Components organized by feature in /frontend/src/routes/(authed)/[feature]/
+- Do not use shared components in /frontend/src/lib/components/ unless instructed to
+- Type definitions in /frontend/src/lib/types/
+- State management stores in /frontend/src/lib/stores/
+- Static assets in /frontend/static/
 
-# Answer style:
-- Always use DRY and KISS principles.
-- Do not refactor existing functionality if not required by the current change.
-- Be succint if possible.
-- If new files are required, always propose their names.
+## API Integration:
+- SvelteKit endpoints that interact with Python backend are in /frontend/src/routes/(authed)/api/
+- All Python backend requests must be prefixed with "/python/"
+- Authentication logic handled in hooks.server.ts
+- Client-side hooks in hooks.client.ts
+
+## Development:
+- Uses npm for package management
+- Configuration in package.json, svelte.config.js, and vite.config.ts
+- Uses Tailwind CSS for styling
+- Environment variables in .env file
+- Do not focus on linting warnings
+- Linting warnings will be fixed after all the files have been generated
+- Fix only syntax errors
+- When required add comments only before block of codes, never during the block of code
+
+# Development Workflow:
+1. Database Model:
+   - Create/update SQLAlchemy model in /app/models/
+   - Add model logic within the model class
+   - No migration needed for model changes
+
+2. Backend API:
+   - Add routes in /app/routes/
+   - Implement endpoint logic using Flask
+   - Add necessary trading actions in /app/trade_actions/ if required
+
+3. Frontend Development:
+   - Create SvelteKit endpoint in /frontend/src/routes/(authed)/api/
+   - Define TypeScript interfaces in /frontend/src/lib/types/
+   - Implement Svelte components in feature-specific directories
+   - Create page logic in +page.ts files
+   - Design UI using Tailwind CSS
+
+# Best Practices:
+- Follow DRY (Don't Repeat Yourself) and KISS (Keep It Simple, Stupid) principles
+- Maintain existing code structure unless refactoring is explicitly required
+- Keep responses and implementations concise
+- Create new components when nesting becomes too deep
+- Use descriptive names for new files and components
+- Ensure proper error handling in both frontend and backend
+- Do not write new tests

@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import type { TradePair } from '$lib/types/trade_pairs';
+import type { TradePair } from '$lib/types/TradePairs';
 
 export const load: PageLoad = async ({ fetch }) => {
     try {

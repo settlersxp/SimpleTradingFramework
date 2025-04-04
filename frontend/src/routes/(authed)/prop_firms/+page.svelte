@@ -55,6 +55,19 @@
                                 See a list of all available prop firms.
                             </p>
                         </a>
+
+                        <!-- Create New Prop Firm Link -->
+                        <a
+                            href="/prop_firms/overview"
+                            class="relative block p-6 border border-gray-300 rounded-lg hover:border-gray-400 bg-white shadow-sm hover:shadow-md transition-all"
+                        >
+                            <h3 class="text-lg font-medium text-indigo-600">
+                                Overview
+                            </h3>
+                            <p class="mt-2 text-sm text-gray-500">
+                                Sync information from all prop firms.
+                            </p>
+                        </a>
                     </div>
                 </div>
             </div>

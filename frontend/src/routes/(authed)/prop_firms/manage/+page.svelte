@@ -1,6 +1,6 @@
 <script lang="ts">
     // Removed onMount and direct API imports for initial load
-    import type { PropFirm } from "../../../../lib/types/prop_firms";
+    import type { PropFirm } from "../../../../lib/types/PropFirms";
 
     let { data } = $props(); // Get data from +page.ts load function
 

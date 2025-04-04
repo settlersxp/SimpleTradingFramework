@@ -5,6 +5,7 @@ from app.models.trade_pairs import TradePairs
 from app.models.trade_association import PropFirmTrades
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app.routes.auth import login_required
+from app.trade_actions.prop_firm_sync import PropFirmSyncService
 
 bp = Blueprint("prop_firms", __name__)
 
@@ -263,5 +264,47 @@ def manage_trade_pairs(prop_firm_id):
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": str(e)}), 400
+
+
+@bp.route('/python/prop_firms/sync', methods=['POST'])
+def sync_prop_firms():
+    """
+    Synchronize all active prop firms with MT5.
+    Updates account information and creates new trades.
+    """
+    try:
+        # Get prop firm ID from request if specified
+        prop_firm_id = request.json.get('prop_firm_id') if request.json else None
+        
+        if prop_firm_id:
+            # Sync specific prop firm
+            prop_firm = PropFirm.query.get(prop_firm_id)
+            if not prop_firm:
+                return jsonify({'error': 'Prop firm not found'}), 404
+            
+            success = PropFirmSyncService.sync_prop_firm(prop_firm)
+            return jsonify({
+                'success': success,
+                'message': 'Prop firm synced successfully' if success else 'Failed to sync prop firm'
+            })
+        else:
+            # Sync all active prop firms
+            results = PropFirmSyncService.sync_all_prop_firms()
+            
+            # Count successes and failures
+            success_count = sum(1 for success in results.values() if success)
+            total_count = len(results)
+            
+            return jsonify({
+                'success': True,
+                'message': f'Synced {success_count} out of {total_count} prop firms',
+                'results': results
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
