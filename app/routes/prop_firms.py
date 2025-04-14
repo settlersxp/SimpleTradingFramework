@@ -269,6 +269,7 @@ def manage_trade_pairs(prop_firm_id):
             return jsonify({"error": str(e)}), 400
 
 
+@login_required
 @bp.route('/prop_firms/sync', methods=['POST'])
 def sync_prop_firms():
     """
