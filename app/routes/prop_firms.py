@@ -137,7 +137,7 @@ def trades_for_prop_firm(prop_firm_id):
         trade = assoc.trade
         if not trade:
             continue
-        
+
         trade_data = trade.to_dict()
         trade_data["platform_id"] = assoc.platform_id
         trade_data["response"] = assoc.response
@@ -269,7 +269,7 @@ def manage_trade_pairs(prop_firm_id):
             return jsonify({"error": str(e)}), 400
 
 
-@bp.route('/python/prop_firms/sync', methods=['POST'])
+@bp.route('/prop_firms/sync', methods=['POST'])
 def sync_prop_firms():
     """
     Synchronize all active prop firms with MT5.
