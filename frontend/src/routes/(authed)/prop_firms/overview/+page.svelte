@@ -1,8 +1,5 @@
 <script lang="ts">
-    import type { Trade } from "$lib/types/Trade";
-    import type { TradePair } from "$lib/types/TradePairs";
-
-
+    import type { PropFirm, TradePairInfo } from "$lib/types/PropFirms";
 
     const props = $props<{ data: { propFirms: PropFirm[] } }>();
     let syncing = $state(false);
@@ -173,24 +170,30 @@
                             Associated Trade Pairs
                         </h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {#each firm.tradePairs.filter((pair: TradePair) => pair.is_associated) as pair}
-                                <div class="bg-gray-50 rounded p-3">
-                                    <p
-                                        class="text-sm font-medium text-gray-900"
-                                    >
-                                        {pair.name}
-                                    </p>
-                                    {#if pair.current_label}
-                                        <p class="text-xs text-gray-500">
-                                            Label: {pair.current_label}
+                            {#if firm.tradePairs && Array.isArray(firm.tradePairs.trade_pairs)}
+                                {#each firm.tradePairs.trade_pairs.filter((pair: TradePairInfo) => pair.is_associated) as pair}
+                                    <div class="bg-gray-50 rounded p-3">
+                                        <p
+                                            class="text-sm font-medium text-gray-900"
+                                        >
+                                            {pair.name}
                                         </p>
-                                    {/if}
-                                </div>
-                            {:else}
+                                        {#if pair.current_label}
+                                            <p class="text-xs text-gray-500">
+                                                Label: {pair.current_label}
+                                            </p>
+                                        {/if}
+                                    </div>
+                                {/each}
+                            {:else if firm.tradePairs && Array.isArray(firm.tradePairs)}
                                 <p class="text-sm text-gray-500">
                                     No trade pairs associated
                                 </p>
-                            {/each}
+                            {:else}
+                                <p class="text-sm text-gray-500">
+                                    No trade pairs data available
+                                </p>
+                            {/if}
                         </div>
                     </div>
 

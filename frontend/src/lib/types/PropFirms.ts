@@ -44,7 +44,7 @@ export interface UserPropFirmsResponse {
 // Response for GET /<id>/trades
 export interface PropFirmTradesResponse {
     prop_firm: PropFirm;
-    trades: Trade[]; // Replace 'any' with a specific Trade type if defined
+    trades: any[]; // Replace 'any' with a specific Trade type if defined
     error?: string; // Keep error field for potential backend errors
 }
 
