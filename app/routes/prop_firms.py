@@ -286,10 +286,11 @@ def sync_prop_firms():
             if not prop_firm:
                 return jsonify({'error': 'Prop firm not found'}), 404
             
-            success = PropFirmSyncService.sync_prop_firm(prop_firm)
+            result = PropFirm.trading.sync_prop_firm(prop_firm)
             return jsonify({
-                'success': success,
-                'message': 'Prop firm synced successfully' if success else 'Failed to sync prop firm'
+                'prop_firm': result,
+                'success': True,
+                'message': 'Prop firm synced successfully'
             })
         else:
             # Sync all active prop firms

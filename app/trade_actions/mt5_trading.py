@@ -9,7 +9,7 @@ from app.models.execute_trade_return import ExecuteTradeReturn
 
 if TYPE_CHECKING:
     from app.models.trade import Trade
-
+    from app.models.prop_firm import PropFirm
 logger = logging.getLogger(__name__)
 
 
@@ -172,7 +172,7 @@ class MT5Trading(TradingInterface):
     def _execute_trade(self, trade: "Trade", label: str) -> ExecuteTradeReturn:
         """Execute a trade with MT5"""
         self.connect(self.credentials)
-        
+
         if not self.connected:
             # try to reconnect and in case of failure return the error
             self.connected = False
@@ -304,3 +304,57 @@ class MT5Trading(TradingInterface):
         self.connect(self.credentials)
         account_info = mt5.account_info()
         return account_info is not None
+
+    def sync_prop_firm(self, prop_firm: "PropFirm") -> Dict[str, Any]:
+        """
+        Synchronize prop firm information with MT5.
+        Updates account information and creates new trades.
+        """
+        to_return = {
+            'full_balance': 0, 
+            'available_balance': 0, 
+            'drawdown_percentage': 0, 
+            'trades': []
+        }
+
+        self.connect(self.credentials)
+
+        # Get account information
+        account_info = mt5.get_account_info()
+        if account_info:
+            # Update prop firm information
+            to_return['full_balance'] = account_info['balance']
+            to_return['available_balance'] = account_info['free_margin']
+            
+            # Calculate drawdown percentage
+            if account_info['balance'] > 0:
+                drawdown = ((account_info['balance'] - account_info['equity']) / account_info['balance']) * 100
+                to_return['drawdown_percentage'] = max(0, drawdown)
+            
+            # Get open positions
+            positions = mt5.get_open_positions()
+            if positions:
+                for position in positions:
+                    # Check if trade already exists
+                    existing_trade = Trade.query.filter_by(
+                        platform_id=str(position['ticket']),
+                        prop_firm_id=prop_firm.id
+                    ).first()
+                    
+                    if not existing_trade:
+                        # Create new trade
+                        new_trade = Trade(
+                            prop_firm_id=prop_firm.id,
+                            platform_id=str(position['ticket']),
+                            strategy='MT5_SYNC',  # or extract from position comment
+                            order_type=position['type'],
+                            contracts=position['volume'],
+                            ticker=position['symbol'],
+                            position_size=abs(position['profit'] + position['swap']),
+                            created_at=datetime.fromisoformat(position['time']),
+                            response='Synced from MT5'
+                        )
+                        to_return['trades'].append(new_trade)
+
+            
+            return to_return
