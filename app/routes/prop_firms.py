@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, render_template, redirect, url_for, flash
+from flask import Blueprint, jsonify, request
 from app.models.prop_firm import PropFirm
 from app import db
 from app.models.trade_pairs import TradePairs
@@ -270,7 +270,7 @@ def manage_trade_pairs(prop_firm_id):
 
 
 @login_required
-@bp.route('/prop_firms/sync', methods=['POST'])
+@bp.route('/sync', methods=['POST'])
 def sync_prop_firms():
     """
     Synchronize all active prop firms with MT5.
