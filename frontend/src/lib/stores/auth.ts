@@ -1,4 +1,4 @@
-import type { User } from '$lib/api/auth';
+import type { User } from "$lib/types/User";
 
 // User state using Svelte 5 runes
 export let $user: User | null = null;

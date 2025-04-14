@@ -13,6 +13,7 @@ export async function logout(): Promise<AuthResponse> {
     }
 }
 
+
 export async function deleteUser(userId: number): Promise<AuthResponse> {
     try {
         const response = await fetch(`${getBackendUrl()}/api/auth/users/${userId}`, {

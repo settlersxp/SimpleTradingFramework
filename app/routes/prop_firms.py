@@ -135,6 +135,9 @@ def trades_for_prop_firm(prop_firm_id):
     trades_data = []
     for assoc in associations:
         trade = assoc.trade
+        if not trade:
+            continue
+        
         trade_data = trade.to_dict()
         trade_data["platform_id"] = assoc.platform_id
         trade_data["response"] = assoc.response

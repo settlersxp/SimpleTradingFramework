@@ -1,8 +1,13 @@
 <script lang="ts">
+    import { goto } from "$app/navigation";
+    import * as auth from "$lib/stores/auth";
+    import Login from "./login/+page.svelte";
+
+    $: if (auth.$user) {
+        goto("/prop_firms/overview");
+    }
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>
-    Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the
-    documentation
-</p>
+{#if !auth.$user}
+    <Login />
+{/if}

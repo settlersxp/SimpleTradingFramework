@@ -1,5 +1,5 @@
 import type { LayoutServerLoad } from './$types';
-import type { User } from '$lib/api/auth';
+import type { User } from '$lib/types/User';
 
 export const load: LayoutServerLoad = async ({ cookies, fetch }) => {
     const userId = cookies.get('user_id');
