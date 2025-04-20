@@ -6,9 +6,10 @@ from datetime import datetime
 from threading import Timer, Lock
 from typing import TYPE_CHECKING
 from app.models.execute_trade_return import ExecuteTradeReturn
+from app.models.trade import Trade
+from app.models.trade_association import PropFirmTrades
 
 if TYPE_CHECKING:
-    from app.models.trade import Trade
     from app.models.prop_firm import PropFirm
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,10 @@ class MT5Trading(TradingInterface):
                 'path': str (optional)
             }
         """
-        mt5.shutdown()
+        # Check if MT5 is already running
+        if mt5.account_info():
+            return True
+
         try:
             # Initialize MT5
             if not mt5.initialize(
@@ -45,17 +49,17 @@ class MT5Trading(TradingInterface):
                 server=credentials.get("server"),
                 path=self.mt_path,
             ):
-                logger.error(f"MT5 initialization failed: {mt5.last_error()}")
+                logger.error("MT5 initialization failed: %s", mt5.last_error())
                 return False
             self.connected = True
             logger.info("Successfully connected to MT5")
             return True
         except Exception as e:
-            logger.error(f"Error connecting to MT5: {e}")
+            logger.error("Error connecting to MT5: %s", e)
             self.connected = False
             return False
 
-    def cancel_trade(self, old_trade_response: "JSON") -> ExecuteTradeReturn:
+    def cancel_trade(self, old_trade_response: Dict[str, Any]) -> ExecuteTradeReturn:
         """
         Cancel a trade on MT5
         """
@@ -80,7 +84,7 @@ class MT5Trading(TradingInterface):
                 details={"retcode": result, "result": result},
             )
         except Exception as e:
-            logger.error(f"Error canceling trade: {e}")
+            logger.error("Error canceling trade: %s", e)
             return ExecuteTradeReturn(
                 success=False,
                 message=f"Tried to close trade but failed with error: {str(e)}",
@@ -151,7 +155,11 @@ class MT5Trading(TradingInterface):
 
             # Process the oldest trade in the queue
             trade, label, queue_time = self.trade_queue.pop(0)
-            logger.info(f"Processing queued trade for {label} (queued at {queue_time})")
+            logger.info(
+                "Processing queued trade for %s (queued at %s)",
+                label,
+                queue_time,
+            )
 
             # Execute the trade with updated prices
             result = self._execute_trade(trade, label)
@@ -159,7 +167,8 @@ class MT5Trading(TradingInterface):
             if result["success"]:
                 self.last_trade_time = current_time
 
-            # If there are more trades in the queue, schedule the next processing
+            # If there are more trades in the queue,
+            # schedule the next processing
             if self.trade_queue:
                 self.processing_timer = Timer(
                     self.cooldown_period, self._process_trade_queue
@@ -311,50 +320,55 @@ class MT5Trading(TradingInterface):
         Updates account information and creates new trades.
         """
         to_return = {
-            'full_balance': 0, 
-            'available_balance': 0, 
-            'drawdown_percentage': 0, 
-            'trades': []
+            "full_balance": 0,
+            "available_balance": 0,
+            "drawdown_percentage": 0,
+            "trades": [],
         }
 
         self.connect(self.credentials)
 
         # Get account information
-        account_info = mt5.get_account_info()
+        account_info = mt5.account_info()
         if account_info:
             # Update prop firm information
-            to_return['full_balance'] = account_info['balance']
-            to_return['available_balance'] = account_info['free_margin']
-            
+            to_return["full_balance"] = account_info.balance
+            to_return["available_balance"] = account_info.margin_free
+
             # Calculate drawdown percentage
-            if account_info['balance'] > 0:
-                drawdown = ((account_info['balance'] - account_info['equity']) / account_info['balance']) * 100
-                to_return['drawdown_percentage'] = max(0, drawdown)
-            
+            if account_info.balance > 0:
+                drawdown = (
+                    (account_info.balance - account_info.equity) / account_info.balance
+                ) * 100
+                to_return["drawdown_percentage"] = max(0, drawdown)
+
             # Get open positions
-            positions = mt5.get_open_positions()
+            positions = mt5.positions_get()
             if positions:
                 for position in positions:
                     # Check if trade already exists
-                    existing_trade = Trade.query.filter_by(
-                        platform_id=str(position['ticket']),
-                        prop_firm_id=prop_firm.id
+                    existing_trade = PropFirmTrades.query.filter_by(
+                        platform_id=str(position.ticket),
+                        prop_firm_id=prop_firm.id,
                     ).first()
-                    
-                    if not existing_trade:
-                        # Create new trade
-                        new_trade = Trade(
-                            prop_firm_id=prop_firm.id,
-                            platform_id=str(position['ticket']),
-                            strategy='MT5_SYNC',  # or extract from position comment
-                            order_type=position['type'],
-                            contracts=position['volume'],
-                            ticker=position['symbol'],
-                            position_size=abs(position['profit'] + position['swap']),
-                            created_at=datetime.fromisoformat(position['time']),
-                            response='Synced from MT5'
-                        )
-                        to_return['trades'].append(new_trade)
 
-            
+                    if not existing_trade:
+                        new_trade = Trade(
+                            strategy="MT5_SYNC",
+                            order_type=position.type,
+                            contracts=position.volume,
+                            ticker=position.symbol,
+                            position_size=abs(position.profit + position.swap),
+                        )
+                        new_trade = Trade.create_new_trade(new_trade)
+
+                        new_association = PropFirmTrades.associate_trade(
+                            new_trade,
+                            prop_firm,
+                            str(position.ticket),
+                            list(position),
+                        )
+                        to_return["trades"].append(new_association.to_dict())
+                    else:
+                        to_return["trades"].append(existing_trade.to_dict())
             return to_return

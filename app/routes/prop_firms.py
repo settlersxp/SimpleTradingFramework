@@ -5,7 +5,6 @@ from app.models.trade_pairs import TradePairs
 from app.models.trade_association import PropFirmTrades
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app.routes.auth import login_required
-from app.trade_actions.prop_firm_sync import PropFirmSyncService
 
 bp = Blueprint("prop_firms", __name__)
 
@@ -13,6 +12,10 @@ bp = Blueprint("prop_firms", __name__)
 @login_required
 @bp.route("/create", methods=["POST"])
 def create_prop_firm():
+    """
+    Create a new prop firm.
+    POST: Create a new prop firm.
+    """
     try:
         data = request.get_json()
 
@@ -51,6 +54,10 @@ def create_prop_firm():
 @login_required
 @bp.route("/", methods=["GET"])
 def get_prop_firms():
+    """
+    Get all prop firms.
+    GET: Get all prop firms and their trade associations.
+    """
     # First query: Get all prop firms
     prop_firms = PropFirm.query.all()
 
@@ -103,6 +110,11 @@ def get_prop_firms():
 @login_required
 @bp.route("/<int:prop_firm_id>", methods=["DELETE", "GET"])
 def delete_get_update_prop_firm(prop_firm_id):
+    """
+    Delete or get/update a prop firm.
+    DELETE: Delete a prop firm.
+    GET: Get a prop firm.
+    """
     prop_firm = db.session.get(PropFirm, prop_firm_id)
     if not prop_firm:
         return jsonify({"error": "Prop firm not found"}), 404
@@ -123,6 +135,10 @@ def delete_get_update_prop_firm(prop_firm_id):
 @login_required
 @bp.route("/<int:prop_firm_id>/trades", methods=["GET"])
 def trades_for_prop_firm(prop_firm_id):
+    """
+    Get all trades associated with a prop firm.
+    GET: Get all trades and their associations.
+    """
     prop_firm = db.session.get(PropFirm, prop_firm_id)
     if not prop_firm:
         return jsonify({"error": "Prop firm not found"}), 404
@@ -202,6 +218,11 @@ def update_prop_firm(prop_firm_id):
 @login_required
 @bp.route("/<int:prop_firm_id>/trade_pairs", methods=["GET", "POST"])
 def manage_trade_pairs(prop_firm_id):
+    """
+    Manage trade pairs for a prop firm.
+    GET: Get all trade pairs and their associations.
+    POST: Update the associations for a prop firm.
+    """
     prop_firm = db.session.get(PropFirm, prop_firm_id)
     if not prop_firm:
         return jsonify({"error": "Prop firm not found"}), 404
@@ -270,7 +291,7 @@ def manage_trade_pairs(prop_firm_id):
 
 
 @login_required
-@bp.route('/sync', methods=['POST'])
+@bp.route("/sync", methods=["POST"])
 def sync_prop_firms():
     """
     Synchronize all active prop firms with MT5.
@@ -278,38 +299,41 @@ def sync_prop_firms():
     """
     try:
         # Get prop firm ID from request if specified
-        prop_firm_id = request.json.get('prop_firm_id') if request.json else None
-        
+        prop_firm_id = request.json.get("prop_firm_id") if request.json else None
+
         if prop_firm_id:
             # Sync specific prop firm
             prop_firm = PropFirm.query.get(prop_firm_id)
             if not prop_firm:
-                return jsonify({'error': 'Prop firm not found'}), 404
-            
-            result = PropFirm.trading.sync_prop_firm(prop_firm)
-            return jsonify({
-                'prop_firm': result,
-                'success': True,
-                'message': 'Prop firm synced successfully'
-            })
+                return jsonify({"error": "Prop firm not found"}), 404
+
+            result = prop_firm.trading.sync_prop_firm(prop_firm)
+            return jsonify(
+                {
+                    "prop_firm": result,
+                    "success": True,
+                    "message": "Prop firm synced successfully",
+                }
+            )
         else:
             # Sync all active prop firms
-            results = PropFirmSyncService.sync_all_prop_firms()
-            
+            prop_firms = PropFirm.query.filter_by(is_active=True).all()
+            results = {}
+            for prop_firm in prop_firms:
+                result = prop_firm.trading.sync_prop_firm(prop_firm)
+                results[prop_firm.id] = result
+
             # Count successes and failures
             success_count = sum(1 for success in results.values() if success)
             total_count = len(results)
-            
-            return jsonify({
-                'success': True,
-                'message': f'Synced {success_count} out of {total_count} prop firms',
-                'results': results
-            })
-            
+
+            return jsonify(
+                {
+                    "success": True,
+                    "message": f"Synced {success_count} out of {total_count} prop firms",
+                    "results": results,
+                }
+            )
+
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
+        return jsonify({"success": False, "error": str(e)}), 500
