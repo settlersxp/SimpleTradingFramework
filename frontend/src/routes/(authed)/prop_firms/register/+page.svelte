@@ -12,7 +12,7 @@
         is_active: boolean;
         full_balance: number | string;
         available_balance: number | string;
-        dowdown_percentage: number | string;
+        drawdown_percentage: number | string;
     };
 
     let form: PropFirmForm = {
@@ -26,7 +26,7 @@
         is_active: true,
         full_balance: 0,
         available_balance: 0,
-        dowdown_percentage: 0,
+        drawdown_percentage: 0,
     };
 
     // Platform type options
@@ -56,10 +56,10 @@
                     typeof form.available_balance === "string"
                         ? parseFloat(form.available_balance)
                         : form.available_balance,
-                dowdown_percentage:
-                    typeof form.dowdown_percentage === "string"
-                        ? parseFloat(form.dowdown_percentage)
-                        : form.dowdown_percentage,
+                drawdown_percentage:
+                    typeof form.drawdown_percentage === "string"
+                        ? parseFloat(form.drawdown_percentage)
+                        : form.drawdown_percentage,
                 port:
                     typeof form.port === "string"
                         ? parseInt(form.port)
@@ -80,7 +80,7 @@
                 );
             }
 
-            await goto("/prop_firms/list");
+            await goto("/prop_firms/overview");
         } catch (err) {
             console.error("Error creating prop firm:", err);
             error = err instanceof Error ? err.message : "An error occurred";
@@ -243,14 +243,14 @@
                     </div>
                     <div>
                         <label
-                            for="dowdown_percentage"
+                            for="drawdown_percentage"
                             class="block text-sm font-medium text-gray-700"
                             >Drawdown Percentage</label
                         >
                         <input
                             type="number"
-                            id="dowdown_percentage"
-                            bind:value={form.dowdown_percentage}
+                            id="drawdown_percentage"
+                            bind:value={form.drawdown_percentage}
                             step="0.01"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         />
@@ -290,7 +290,7 @@
 
                     <div class="flex justify-end space-x-4 pt-4">
                         <a
-                            href="/prop_firms/list"
+                            href="/prop_firms/overview"
                             class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                         >
                             Cancel

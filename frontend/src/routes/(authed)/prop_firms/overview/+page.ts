@@ -20,12 +20,13 @@ export const load: PageLoad = async ({ fetch }) => {
 
             return {
                 ...firm,
-                trades,
-                tradePairs
+                trades: trades.trades,
+                tradePairs: tradePairs.trade_pairs
             };
         })
     );
 
+    // console.log("Prop firms with trades:", propFirmsWithTrades[0].trades);
     return {
         propFirms: propFirmsWithTrades
     };

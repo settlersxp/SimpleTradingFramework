@@ -367,15 +367,16 @@ class MT5Trading(TradingInterface):
                 )
                 new_trade = Trade.create_new_trade(new_trade)
 
-                new_association = PropFirmTrades.associate_trade(
+                PropFirmTrades.associate_trade(
                     new_trade,
                     prop_firm,
                     str(position.ticket),
                     list(position),
                 )
-                to_return["trades"].append(new_association.to_dict())
+                to_return["trades"].append(new_trade.to_dict())
             else:
-                to_return["trades"].append(existing_trade.to_dict())
+                old_trade = Trade.query.filter_by(id=existing_trade.trade_id).first()
+                to_return["trades"].append(old_trade.to_dict())
 
         # Remove from trade to prop firm association table the trades
         # that don't exist in positions for the current prop firm

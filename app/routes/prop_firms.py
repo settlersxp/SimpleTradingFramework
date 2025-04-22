@@ -24,7 +24,7 @@ def create_prop_firm():
             name=data.get("name"),
             full_balance=float(data.get("full_balance", 0)),
             available_balance=float(data.get("available_balance", 0)),
-            dowdown_percentage=float(data.get("dowdown_percentage", 0)),
+            drawdown_percentage=float(data.get("drawdown_percentage", 0)),
             is_active=data.get("is_active", False),
             username=data.get("username"),
             password=data.get("password"),
@@ -92,7 +92,7 @@ def get_prop_firms():
                 "name": pf.name,
                 "full_balance": pf.full_balance,
                 "available_balance": pf.available_balance,
-                "dowdown_percentage": pf.dowdown_percentage,
+                "drawdown_percentage": pf.drawdown_percentage,
                 "username": pf.username,
                 "password": pf.password,
                 "ip_address": pf.ip_address,
@@ -179,8 +179,8 @@ def update_prop_firm(prop_firm_id):
             prop_firm.full_balance = float(data["full_balance"])
         if "available_balance" in data:
             prop_firm.available_balance = float(data["available_balance"])
-        if "dowdown_percentage" in data:
-            prop_firm.dowdown_percentage = float(data["dowdown_percentage"])
+        if "drawdown_percentage" in data:
+            prop_firm.drawdown_percentage = float(data["drawdown_percentage"])
         if "is_active" in data:
             prop_firm.is_active = data["is_active"]
         if "username" in data:
@@ -197,7 +197,7 @@ def update_prop_firm(prop_firm_id):
         # Update downdraft percentage if full balance changed
         if "full_balance" in data:
             prop_firm.set_available_balance_to_full_balance()
-            prop_firm.update_dowdown_percentage_on_full_balance_update(
+            prop_firm.update_drawdown_percentage_on_full_balance_update(
                 float(data["full_balance"])
             )
 

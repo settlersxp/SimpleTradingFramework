@@ -19,6 +19,6 @@
         onSync={props.onSync}
     />
     <AccountInformation firm={props.firm} />
-    <TradePairs firm={props.firm} />
-    <RecentTrades firm={props.firm} />
+    <TradePairs trade_pairs={props.firm.tradePairs} />
+    <RecentTrades trades={props.firm.trades} />
 </div>

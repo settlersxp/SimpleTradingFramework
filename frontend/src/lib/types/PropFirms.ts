@@ -12,7 +12,7 @@ export interface PropFirm {
     is_active: boolean;
     full_balance: number;
     available_balance: number;
-    dowdown_percentage: number;
+    drawdown_percentage: number;
     created_at: string; // ISO format string expected from backend
     // updated_at is not explicitly in the Python to_dict, but was in original TS
     updated_at?: string;
@@ -25,7 +25,7 @@ export interface PropFirmData {
     name: string;
     full_balance: number;
     available_balance?: number; // Optional, backend might default
-    dowdown_percentage?: number; // Optional, backend might calculate
+    drawdown_percentage?: number; // Optional, backend might calculate
     is_active?: boolean;
     username?: string;
     password?: string;

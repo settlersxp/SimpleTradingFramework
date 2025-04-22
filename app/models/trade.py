@@ -103,10 +103,10 @@ class Trade(TimezoneAwareModel):
         ).all()
 
         for trade in matching_trades:
-            # if the future dowdown_percentage is greater than 4% skip the trade
+            # if the future drawdown_percentage is greater than 4% skip the trade
             for prop_firm in trade.prop_firms:
                 prop_firm.update_available_balance(trade)
-                if prop_firm.dowdown_percentage > 1.04:
+                if prop_firm.drawdown_percentage > 1.04:
                     continue
 
                 trade.contracts = contracts

@@ -1,12 +1,28 @@
 <script lang="ts">
-    import type { PropFirm } from "$lib/types/PropFirms";
+    import type { Trade } from "$lib/types/Trade";
 
-    const props = $props<{ firm: PropFirm }>();
+    // We now expect an array of trades directly
+    const props = $props<{ trades: Trade[] }>();
+
+    // Helper function to determine if the order is a buy or sell
+    function getOrderTypeDisplay(orderType: string) {
+        return orderType === "0" || orderType === "sell" || orderType === "SELL"
+            ? "SELL"
+            : "BUY";
+    }
+
+    // Helper function to determine the order type class
+    function getOrderTypeClass(orderType: string) {
+        return orderType === "0" || orderType === "sell" || orderType === "SELL"
+            ? "bg-red-100 text-red-800"
+            : "bg-green-100 text-green-800";
+    }
 </script>
 
 <div class="px-6 py-4">
     <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Trades</h3>
-    {#if props.firm.trades && props.firm.trades.length > 0}
+
+    {#if Array.isArray(props.trades) && props.trades.length > 0}
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead>
@@ -42,7 +58,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                    {#each props.firm.trades as trade}
+                    {#each props.trades as trade}
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm text-gray-900"
                                 >{trade.id}</td
@@ -52,19 +68,23 @@
                             >
                             <td class="px-4 py-3">
                                 <span
-                                    class={`px-2 py-1 text-xs font-medium rounded-full ${trade.order_type === "buy" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                                    class={`px-2 py-1 text-xs font-medium rounded-full ${getOrderTypeClass(trade.order_type)}`}
                                 >
-                                    {trade.order_type.toUpperCase()}
+                                    {getOrderTypeDisplay(trade.order_type)}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-900"
                                 >{trade.ticker}</td
                             >
                             <td class="px-4 py-3 text-sm text-gray-900"
-                                >{trade.contracts.toFixed(3)}</td
+                                >{typeof trade.contracts === "number"
+                                    ? trade.contracts.toFixed(3)
+                                    : trade.contracts}</td
                             >
                             <td class="px-4 py-3 text-sm text-gray-900"
-                                >${trade.position_size.toFixed(2)}</td
+                                >${typeof trade.position_size === "number"
+                                    ? trade.position_size.toFixed(2)
+                                    : trade.position_size}</td
                             >
                             <td class="px-4 py-3 text-sm text-gray-900"
                                 >{new Date(

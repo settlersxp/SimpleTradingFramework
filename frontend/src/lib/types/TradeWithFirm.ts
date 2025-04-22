@@ -10,6 +10,6 @@ export type TradeWithFirm = {
         id: number;
         name: string;
         available_balance: number;
-        dowdown_percentage: number;
+        drawdown_percentage: number;
     };
 };

@@ -11,7 +11,7 @@
         name: string;
         full_balance: number;
         available_balance: number;
-        dowdown_percentage: number;
+        drawdown_percentage: number;
         is_active: boolean;
         username: string;
         password: string;
@@ -67,7 +67,7 @@
                 );
             }
 
-            await goto("/prop_firms/list");
+            await goto("/prop_firms/overview");
         } catch (e) {
             error = e instanceof Error ? e.message : "An error occurred";
             console.error("Error updating prop firm:", e);
@@ -228,14 +228,14 @@
                         </div>
                         <div>
                             <label
-                                for="dowdown_percentage"
+                                for="drawdown_percentage"
                                 class="block text-sm font-medium text-gray-700"
                                 >Drawdown Percentage</label
                             >
                             <input
                                 type="number"
-                                id="dowdown_percentage"
-                                bind:value={propFirm.dowdown_percentage}
+                                id="drawdown_percentage"
+                                bind:value={propFirm.drawdown_percentage}
                                 step="0.01"
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             />
@@ -260,7 +260,7 @@
                     <!-- Form Actions -->
                     <div class="flex justify-end space-x-4 pt-4">
                         <a
-                            href="/prop_firms/list"
+                            href="/prop_firms/overview"
                             class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                         >
                             Cancel

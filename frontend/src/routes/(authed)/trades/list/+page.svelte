@@ -43,7 +43,7 @@
             >
                 <h2 class="text-xl font-semibold text-gray-800">Trades</h2>
                 <a
-                    href="/prop_firms/list"
+                    href="/prop_firms/overview"
                     class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
                 >
                     View Prop Firms

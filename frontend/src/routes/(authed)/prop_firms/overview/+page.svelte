@@ -22,8 +22,17 @@
                 throw new Error("Failed to sync prop firm");
             }
 
-            // Reload the page to show updated data
-            window.location.reload();
+            // Parse the response to get the updated firm data
+            const result = await response.json();
+
+            // Check if we need to refresh the page or can update in place
+            if (result && result.prop_firm) {
+                // Update the firm in the list with the new data
+                updateFirmInList(result);
+            } else {
+                // If we can't update in place, reload the page
+                window.location.reload();
+            }
         } catch (error) {
             console.error("Error syncing prop firm:", error);
             syncError =
@@ -31,6 +40,16 @@
         } finally {
             syncing = false;
         }
+    }
+
+    // Function to update a firm in the list without reloading the page
+    function updateFirmInList(result: any) {
+        // This is a placeholder for reactive update logic
+        // In a real implementation, you'd update the specific firm in the list
+        console.log("Updated firm data:", result);
+
+        // For now, we'll just reload to show the changes
+        window.location.reload();
     }
 
     async function syncAllPropFirms() {
