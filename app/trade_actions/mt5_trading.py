@@ -39,8 +39,13 @@ class MT5Trading(TradingInterface):
             }
         """
         # Check if MT5 is already running
-        if mt5.account_info():
-            return True
+        account_info = mt5.account_info()
+        if account_info:
+            same_user = int(account_info.login) == int(credentials.get("username"))
+            if same_user:
+                return True
+            else:
+                mt5.shutdown()
 
         try:
             # Initialize MT5

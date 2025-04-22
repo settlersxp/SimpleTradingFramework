@@ -61,6 +61,7 @@
                 headers: {
                     "Content-Type": "application/json",
                 },
+                body: JSON.stringify({ prop_firm_id: null }),
             });
 
             if (!response.ok) {
