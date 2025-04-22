@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from app.models.execute_trade_return import ExecuteTradeReturn
 from app.models.trade import Trade
 from app.models.trade_association import PropFirmTrades
+from app import db
 
 if TYPE_CHECKING:
     from app.models.prop_firm import PropFirm
@@ -330,45 +331,61 @@ class MT5Trading(TradingInterface):
 
         # Get account information
         account_info = mt5.account_info()
-        if account_info:
-            # Update prop firm information
-            to_return["full_balance"] = account_info.balance
-            to_return["available_balance"] = account_info.margin_free
+        if not account_info:
+            raise Exception("Failed to get account information for %s" % prop_firm.name)
 
-            # Calculate drawdown percentage
-            if account_info.balance > 0:
-                drawdown = (
-                    (account_info.balance - account_info.equity) / account_info.balance
-                ) * 100
-                to_return["drawdown_percentage"] = max(0, drawdown)
+        # Update prop firm information
+        to_return["full_balance"] = account_info.balance
+        to_return["available_balance"] = account_info.margin_free
 
-            # Get open positions
-            positions = mt5.positions_get()
-            if positions:
-                for position in positions:
-                    # Check if trade already exists
-                    existing_trade = PropFirmTrades.query.filter_by(
-                        platform_id=str(position.ticket),
-                        prop_firm_id=prop_firm.id,
-                    ).first()
+        # Calculate drawdown percentage
+        if account_info.balance > 0:
+            drawdown = (
+                (account_info.balance - account_info.equity) / account_info.balance
+            ) * 100
+            to_return["drawdown_percentage"] = max(0, drawdown)
 
-                    if not existing_trade:
-                        new_trade = Trade(
-                            strategy="MT5_SYNC",
-                            order_type=position.type,
-                            contracts=position.volume,
-                            ticker=position.symbol,
-                            position_size=abs(position.profit + position.swap),
-                        )
-                        new_trade = Trade.create_new_trade(new_trade)
-
-                        new_association = PropFirmTrades.associate_trade(
-                            new_trade,
-                            prop_firm,
-                            str(position.ticket),
-                            list(position),
-                        )
-                        to_return["trades"].append(new_association.to_dict())
-                    else:
-                        to_return["trades"].append(existing_trade.to_dict())
+        # Get open positions
+        positions = mt5.positions_get()
+        if not positions:
             return to_return
+
+        for position in positions:
+            # Check if trade already exists
+            existing_trade = PropFirmTrades.query.filter_by(
+                platform_id=str(position.ticket),
+                prop_firm_id=prop_firm.id,
+            ).first()
+
+            if not existing_trade:
+                new_trade = Trade(
+                    strategy="MT5_SYNC",
+                    order_type=position.type,
+                    contracts=position.volume,
+                    ticker=position.symbol,
+                    position_size=abs(position.profit + position.swap),
+                )
+                new_trade = Trade.create_new_trade(new_trade)
+
+                new_association = PropFirmTrades.associate_trade(
+                    new_trade,
+                    prop_firm,
+                    str(position.ticket),
+                    list(position),
+                )
+                to_return["trades"].append(new_association.to_dict())
+            else:
+                to_return["trades"].append(existing_trade.to_dict())
+
+        # Remove from trade to prop firm association table the trades
+        # that don't exist in positions for the current prop firm
+        trades_to_delete = PropFirmTrades.query.filter(
+            PropFirmTrades.prop_firm_id == prop_firm.id,
+            PropFirmTrades.platform_id.notin_(
+                [str(position.ticket) for position in positions]
+            ),
+        ).all()
+        for trade in trades_to_delete:
+            db.session.delete(trade)
+
+        return to_return
