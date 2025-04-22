@@ -241,6 +241,12 @@ class MT5Trading(TradingInterface):
                 mt5.ORDER_FILLING_RETURN,
             ]
 
+            good_return_codes = [
+                mt5.TRADE_RETCODE_PLACED,
+                mt5.TRADE_RETCODE_DONE,
+                mt5.TRADE_RETCODE_DONE_PARTIAL,
+            ]
+
             for filling_type in list_of_filling_types:
                 # Prepare trade request
                 request = {
@@ -262,6 +268,14 @@ class MT5Trading(TradingInterface):
 
                 # exit loop in case of success
                 if result.retcode == mt5.TRADE_RETCODE_PLACED:
+                    break
+
+                # The broker does not offer a price for this type of order
+                if result.retcode == mt5.TRADE_RETCODE_PRICE_OFF:
+                    break
+
+                # Placed successfully
+                if result.retcode in good_return_codes:
                     break
 
             # Add optional parameters if provided
