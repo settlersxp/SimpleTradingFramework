@@ -73,7 +73,7 @@ def add_trade_associations(mt_string, create_trade=True):
     # Now we can directly use prop_firm as it has the association
     if trade.position_size == 0:
         # get the prop firms with this trade
-        prop_firms = db.session.query(PropFirm).join(PropFirmTradePairAssociation).filter_by(trade_id=trade.id).all()
+        prop_firms = db.session.query(PropFirm).join(PropFirmTrades).filter_by(trade_id=trade.id).all()
         for prop_firm in prop_firms:
             association = db.session.query(PropFirmTradePairAssociation).filter_by(
                 prop_firm_id=prop_firm.id,
