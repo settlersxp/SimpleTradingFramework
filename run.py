@@ -166,18 +166,18 @@ class FlaskApp:
 
         @self.app.route("/open_positions", methods=["POST"], strict_slashes=False)
         def open_positions():
-            # redirect to trades
-            return redirect(url_for("trades.handle_trades"))
+            from app.routes.trades import handle_trade_with_parameters
+            return handle_trade_with_parameters(request.get_data(as_text=True))
 
         @self.app.route("/trades", methods=["POST"], strict_slashes=False)
         def trades():
-            # redirect to trades
-            return redirect(url_for("trades.handle_trades"))
+            from app.routes.trades import handle_trade_with_parameters
+            return handle_trade_with_parameters(request.get_data(as_text=True))
 
         @self.app.route("/receiveMessage", methods=["POST"], strict_slashes=False)
         def receive_message():
-            # redirect to trades
-            return redirect(url_for("trades.handle_trades"))
+            from app.routes.trades import handle_trade_with_parameters
+            return handle_trade_with_parameters(request.get_data(as_text=True))
 
         @self.app.route("/health", methods=["GET"])
         def health():
@@ -213,6 +213,7 @@ class FlaskApp:
 
 # Create a single Flask application instance
 flask_app = FlaskApp().app
+flask_app.url_map.strict_slashes = False
 
 
 if __name__ == "__main__":

@@ -31,7 +31,7 @@ def get_trade(trade_id):
     return jsonify(trade.to_dict())
 
 
-@bp.route("/", methods=["GET", "POST"])
+@bp.route("/", methods=["GET", "POST"], strict_slashes=False)
 def handle_trades():
     """Handle GET and POST requests for trades.
 
@@ -46,13 +46,22 @@ def handle_trades():
         return jsonify({"trades": [trade.to_dict() for trade in trades]})
     elif request.method == "POST":
         mt_string = request.get_data(as_text=True)
-        try:
-            trades = add_trade_associations(mt_string)
-            return jsonify(
-                {"status": "success", "trades": [trade.id for trade in trades]}
-            )
-        except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 400
+        return handle_trade_with_parameters(mt_string)
+
+
+def handle_trade_with_parameters(mt_string):
+    """Handle a trade with parameters.
+
+    Args:
+        mt_string (str): The MT string to add the trade.
+    """
+    try:
+        trades = add_trade_associations(mt_string)
+        return jsonify(
+            {"status": "success", "trades": [trade.id for trade in trades]}
+        )
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
 
 
 @bp.route("/view", methods=["GET"])

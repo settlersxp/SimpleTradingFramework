@@ -11,18 +11,12 @@ import json
 bp = Blueprint("trades_association", __name__)
 
 
-@staticmethod
-def cancel_trade(trade, association, prop_firm):
-    """Cancel a trade and remove its association with a prop firm.
+def identify_old_trade(trade):
+    """Identify the old trade for a given trade.
 
     Args:
-        trade (Trade): The trade to cancel.
-        association: The association object linking the prop firm and trade pair.
-        prop_firm (PropFirm): The prop firm associated with the trade.
+        trade (Trade): The trade to identify the old trade for.
     """
-    # Find the trade in the trades table
-    # Get all the associated prop firm trade pair associations
-    # Get the platform id from the association
     old_trade = (
         db.session.query(Trade)
         .filter_by(
@@ -33,23 +27,24 @@ def cancel_trade(trade, association, prop_firm):
         )
         .first()
     )
+    return old_trade
 
-    if not old_trade:
-        return
 
-    old_associations = (
-        db.session.query(PropFirmTrades)
-        .filter_by(trade_id=old_trade.id, prop_firm_id=association.prop_firm_id)
-        .first()
-    )
+@staticmethod
+def cancel_trade(old_trade, association, prop_firm):
+    """Cancel a trade and remove its association with a prop firm.
 
-    if not old_associations:
-        return
-    old_trade_response = json.loads(old_associations.response)
+    Args:
+        trade (Trade): The trade to cancel.
+        association: The association object linking the prop firm and trade pair.
+        prop_firm (PropFirm): The prop firm associated with the trade.
+    """
+    old_trade_response = json.loads(association.response)
     outcome = prop_firm.trading.cancel_trade(old_trade_response)
+
     if outcome.success:
-        old_associations.delete()
-        Trade.query.filter_by(id=old_trade.id).delete()
+        # association.delete()
+        # Trade.query.filter_by(id=old_trade.id).delete()
         print(f"Trade {old_trade.id} canceled successfully")
         return old_trade.id
     else:
@@ -64,24 +59,33 @@ def close_all_trade_associations(trade):
         trade (Trade): The trade to close.
     """
     trades = []
+
+    old_trade = identify_old_trade(trade)
+    if not old_trade:
+        print(f"No old trade found for {trade.id}")
+        return []
+
     prop_firms = (
         db.session.query(PropFirm)
         .join(PropFirmTrades)
-        .filter_by(trade_id=trade.id)
+        .filter_by(trade_id=old_trade.id)
         .all()
     )
+
     for prop_firm in prop_firms:
-        association = (
-            db.session.query(PropFirmTradePairAssociation)
-            .filter_by(prop_firm_id=prop_firm.id, trade_pair_id=trade.id)
-            .first()
-        )
-        if not association:
+        associations = prop_firm.get_trade_associations()
+        if not associations:
             continue
-        print(f"Closing trade {trade.id} for {prop_firm.name}")
-        trade_id = cancel_trade(trade, association, prop_firm)
-        if trade_id:
-            trades.append(trade_id)
+
+        for association in associations:
+            if not association.trade_id:
+                print(f"No trade id found for {association.platform_id}")
+                continue
+
+            print(f"Closing trade {association.platform_id} for {prop_firm.name}")
+            trade_id = cancel_trade(old_trade, association, prop_firm)
+            if trade_id:
+                trades.append(trade_id)
     return trades
 
 

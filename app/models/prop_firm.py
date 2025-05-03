@@ -29,6 +29,9 @@ class PropFirm(TimezoneAwareModel):
 
     _trading_instance: ClassVar[Optional[TradingInterface]] = None
 
+    def get_trade_associations(self) -> List["PropFirmTrades"]:
+        return self.trade_associations
+
     def get_users(self) -> List["User"]:
         """Manually get all users associated with this prop firm"""
         from app.models.user import User
