@@ -17,6 +17,22 @@
             ? "bg-red-100 text-red-800"
             : "bg-green-100 text-green-800";
     }
+
+    async function closeTrade(trade: Trade) {
+        try {
+            const response = await fetch(`/api/trades/close?trade_id=${trade.id}`, {
+                method: "GET",
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to close trade");
+            }
+            
+            
+        } catch (error) {
+            console.error(error);
+        }
+    }
 </script>
 
 <div class="px-6 py-4">
@@ -55,6 +71,10 @@
                             class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                             >Date</th
                         >
+                        <th
+                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                            >Actions</th
+                        >
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -91,6 +111,15 @@
                                     trade.created_at,
                                 ).toLocaleString()}</td
                             >
+                            <td class="px-4 py-3 text-sm text-gray-900">
+                                <button class="text-blue-500 hover:text-blue-700" 
+                                    onclick={() => {
+                                        closeTrade(trade);
+                                    }}
+                                >
+                                    Close
+                                </button>
+                            </td>
                         </tr>
                     {/each}
                 </tbody>

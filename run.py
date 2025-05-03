@@ -117,12 +117,13 @@ class FlaskApp:
             }
 
             # Log and flush immediately only if the user agent is "Go-http-client"
-            if request.headers.get("User-Agent") and "Go-http-client" in request.headers.get("User-Agent"):
+            if request.headers.get(
+                "User-Agent"
+            ) and "Go-http-client" in request.headers.get("User-Agent"):
                 request_logger.info(json.dumps(log_data, indent=2))
 
             for handler in request_logger.handlers:
                 handler.flush()
-
 
         @self.app.after_request
         def after_request(response):
@@ -148,7 +149,9 @@ class FlaskApp:
             }
 
             # Log and flush immediately only if the user agent is "Go-http-client"
-            if response.headers.get("User-Agent") and "Go-http-client" in response.headers.get("User-Agent"):
+            if response.headers.get(
+                "User-Agent"
+            ) and "Go-http-client" in response.headers.get("User-Agent"):
                 request_logger.info(json.dumps(log_data, indent=2))
 
             for handler in request_logger.handlers:
@@ -164,17 +167,17 @@ class FlaskApp:
         @self.app.route("/open_positions", methods=["POST"], strict_slashes=False)
         def open_positions():
             # redirect to trades
-            return redirect(url_for("trades.trades"))
+            return redirect(url_for("trades.handle_trades"))
 
         @self.app.route("/trades", methods=["POST"], strict_slashes=False)
         def trades():
             # redirect to trades
-            return redirect(url_for("trades.trades"))
+            return redirect(url_for("trades.handle_trades"))
 
         @self.app.route("/receiveMessage", methods=["POST"], strict_slashes=False)
         def receive_message():
             # redirect to trades
-            return redirect(url_for("trades.trades"))
+            return redirect(url_for("trades.handle_trades"))
 
         @self.app.route("/health", methods=["GET"])
         def health():

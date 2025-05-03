@@ -47,7 +47,7 @@
     async function closeTrade(tradeId: number) {
         try {
             const response = await fetch(
-                `/api/trades/close?trade_id=${tradeId}`,
+                `/api/trades/close_all_trades?trade_id=${tradeId}`,
                 {
                     method: "GET",
                 },

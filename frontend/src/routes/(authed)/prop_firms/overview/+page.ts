@@ -20,7 +20,7 @@ export const load: PageLoad = async ({ fetch }) => {
 
             return {
                 ...firm,
-                trades: trades.trades,
+                trades: trades.handle_trades,
                 tradePairs: tradePairs.trade_pairs
             };
         })

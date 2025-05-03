@@ -1,8 +1,13 @@
 from flask import Blueprint, jsonify, request
 from app.models.trade import Trade
-from app.routes.trades_association import add_trade_associations
+from app.routes.trades_association import (
+    add_trade_associations,
+    close_all_trade_associations,
+    cancel_trade,
+)
 from app.models.prop_firm import PropFirm
 from app.models.trade_association import PropFirmTrades
+from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app import db
 import json
 
@@ -27,7 +32,7 @@ def get_trade(trade_id):
 
 
 @bp.route("/", methods=["GET", "POST"])
-def trades():
+def handle_trades():
     """Handle GET and POST requests for trades.
 
     GET: Retrieve all trades, ordered by ID in descending order.
@@ -162,9 +167,35 @@ def replay_trade(trade_id):
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-@bp.route("/close", methods=["GET"])
+@bp.route("/close", methods=["POST"])
 def close_trade():
-    """Close a specific trade identified by trade_id query parameter.
+    """Close a specific trade identified by trade_id query parameter."""
+    trade_id = request.get_json().get("trade_id")
+    prop_firm_id = request.get_json().get("prop_firm_id")
+    association = PropFirmTradePairAssociation.query.filter_by(
+        prop_firm_id=prop_firm_id,
+        trade_pair_id=trade_id,
+    ).first()
+    if not association:
+        return jsonify({"status": "error", "message": "Association not found"}), 404
+
+    trade = Trade.query.get_or_404(trade_id)
+    if not trade:
+        return jsonify({"status": "error", "message": "Trade not found"}), 404
+
+    trade_id = cancel_trade(trade, association, prop_firm_id)
+    return jsonify(
+        {
+            "status": "success",
+            "message": "Trade closed successfully",
+            "trade_id": trade_id,
+        }
+    )
+
+
+@bp.route("/close_all_trades", methods=["GET"])
+def close_all_trades():
+    """Close all trades from all the prop firms associated with a trade.
 
     Returns:
         JSON response indicating the status of the close operation.
@@ -173,16 +204,7 @@ def close_trade():
         trade_id = request.args.get("trade_id")
         trade = Trade.query.get_or_404(trade_id)
 
-        # Convert trade to MT string format with close order
-        mt_string = (
-            f'"strategy":"{trade.strategy}", '
-            f'"order":"close", '
-            f'"contracts":"{trade.contracts}", '
-            f'"ticker":"{trade.ticker}", '
-            f'"position_size":"{trade.position_size}"'
-        )
-
-        trades = add_trade_associations(mt_string, create_trade=False)
+        trades = close_all_trade_associations(trade)
 
         return (
             jsonify(

@@ -8,7 +8,7 @@ from app import db
 from app.models.user import User
 import json
 
-bp = Blueprint('trades_association', __name__)
+bp = Blueprint("trades_association", __name__)
 
 
 @staticmethod
@@ -23,20 +23,25 @@ def cancel_trade(trade, association, prop_firm):
     # Find the trade in the trades table
     # Get all the associated prop firm trade pair associations
     # Get the platform id from the association
-    old_trade = db.session.query(Trade).filter_by(
-        order_type='buy' if trade.order_type == 'sell' else 'sell',
-        ticker=trade.ticker,
-        strategy=trade.strategy,
-        contracts=trade.contracts,
-    ).first()
+    old_trade = (
+        db.session.query(Trade)
+        .filter_by(
+            order_type="buy" if trade.order_type == "sell" else "sell",
+            ticker=trade.ticker,
+            strategy=trade.strategy,
+            contracts=trade.contracts,
+        )
+        .first()
+    )
 
     if not old_trade:
         return
 
-    old_associations = db.session.query(PropFirmTrades).filter_by(
-        trade_id=old_trade.id,
-        prop_firm_id=association.prop_firm_id
-    ).first()
+    old_associations = (
+        db.session.query(PropFirmTrades)
+        .filter_by(trade_id=old_trade.id, prop_firm_id=association.prop_firm_id)
+        .first()
+    )
 
     if not old_associations:
         return
@@ -52,7 +57,34 @@ def cancel_trade(trade, association, prop_firm):
         return None
 
 
-@staticmethod
+def close_all_trade_associations(trade):
+    """Close all trade associations for a trade.
+
+    Args:
+        trade (Trade): The trade to close.
+    """
+    trades = []
+    prop_firms = (
+        db.session.query(PropFirm)
+        .join(PropFirmTrades)
+        .filter_by(trade_id=trade.id)
+        .all()
+    )
+    for prop_firm in prop_firms:
+        association = (
+            db.session.query(PropFirmTradePairAssociation)
+            .filter_by(prop_firm_id=prop_firm.id, trade_pair_id=trade.id)
+            .first()
+        )
+        if not association:
+            continue
+        print(f"Closing trade {trade.id} for {prop_firm.name}")
+        trade_id = cancel_trade(trade, association, prop_firm)
+        if trade_id:
+            trades.append(trade_id)
+    return trades
+
+
 def add_trade_associations(mt_string, create_trade=True):
     """Add trade associations based on the provided MT string.
 
@@ -73,15 +105,7 @@ def add_trade_associations(mt_string, create_trade=True):
     # Now we can directly use prop_firm as it has the association
     if trade.position_size == 0:
         # get the prop firms with this trade
-        prop_firms = db.session.query(PropFirm).join(PropFirmTrades).filter_by(trade_id=trade.id).all()
-        for prop_firm in prop_firms:
-            association = db.session.query(PropFirmTradePairAssociation).filter_by(
-                prop_firm_id=prop_firm.id,
-                trade_pair_id=trade.id
-            ).first()
-            trade_id = cancel_trade(trade, association, prop_firm)
-            if trade_id:
-                trades.append(trade_id)
+        trades = close_all_trade_associations(trade)
         return trades
 
     # for every user in the database, get only the active prop firms
@@ -90,8 +114,9 @@ def add_trade_associations(mt_string, create_trade=True):
         prop_firms = user.get_prop_firms()
         for prop_firm in prop_firms:
             # Check if the trade's ticker exists in trade_pairs
-            trade_pair = db.session.query(
-                TradePairs).filter_by(name=trade.ticker).first()
+            trade_pair = (
+                db.session.query(TradePairs).filter_by(name=trade.ticker).first()
+            )
 
             if not trade_pair:
                 print(f"Ticker {trade.ticker} not tracked by {prop_firm.name}")
@@ -99,13 +124,16 @@ def add_trade_associations(mt_string, create_trade=True):
                 continue
 
             # Check if the prop firm has an association with the trade pair
-            association = db.session.query(PropFirmTradePairAssociation).filter_by(
-                prop_firm_id=prop_firm.id,
-                trade_pair_id=trade_pair.id
-            ).first()
+            association = (
+                db.session.query(PropFirmTradePairAssociation)
+                .filter_by(prop_firm_id=prop_firm.id, trade_pair_id=trade_pair.id)
+                .first()
+            )
 
             if not association:
-                print(f"Trade pair not associated with {trade.ticker} and {prop_firm.name}")
+                print(
+                    f"Trade pair not associated with {trade.ticker} and {prop_firm.name}"
+                )
                 continue
 
             # If association exists, use the label when placing the trade
@@ -118,8 +146,8 @@ def add_trade_associations(mt_string, create_trade=True):
             prop_firm_trade = PropFirmTrades(
                 prop_firm_id=prop_firm.id,
                 trade_id=trade.id,
-                platform_id=outcome.details['request_id'],
-                response=json.dumps(outcome.details['response'])
+                platform_id=outcome.details["request_id"],
+                response=json.dumps(outcome.details["response"]),
             )
             db.session.add(prop_firm_trade)
 
@@ -131,8 +159,7 @@ def add_trade_associations(mt_string, create_trade=True):
     return trades
 
 
-
-@bp.route('/', methods=['GET', 'POST', 'PUT'])
+@bp.route("/", methods=["GET", "POST", "PUT"])
 def trades_association():
     """Handle GET, POST, and PUT requests for trade associations.
 
@@ -143,48 +170,48 @@ def trades_association():
     Returns:
         JSON response containing trade association data or status messages.
     """
-    if request.method == 'GET':
+    if request.method == "GET":
         # Query trades through PropFirmTrades association table
-        trades_with_firms = db.session.query(Trade, PropFirm)\
-            .select_from(Trade)\
-            .join(PropFirmTrades, Trade.id == PropFirmTrades.c.trade_id)\
-            .join(PropFirm, PropFirm.id == PropFirmTrades.c.prop_firm_id)\
-            .order_by(Trade.created_at.desc())\
+        trades_with_firms = (
+            db.session.query(Trade, PropFirm)
+            .select_from(Trade)
+            .join(PropFirmTrades, Trade.id == PropFirmTrades.c.trade_id)
+            .join(PropFirm, PropFirm.id == PropFirmTrades.c.prop_firm_id)
+            .order_by(Trade.created_at.desc())
             .all()
+        )
 
         # Format the response to include both trade and prop firm info
-        return jsonify([{
-            **trade.to_dict(),
-            "prop_firm": {
-                "id": prop_firm.id,
-                "name": prop_firm.name
-            }
-        } for trade, prop_firm in trades_with_firms])
-    elif request.method == 'POST':
+        return jsonify(
+            [
+                {
+                    **trade.to_dict(),
+                    "prop_firm": {"id": prop_firm.id, "name": prop_firm.name},
+                }
+                for trade, prop_firm in trades_with_firms
+            ]
+        )
+    elif request.method == "POST":
         try:
             mt_string = request.get_data(as_text=True)
             trades = add_trade_associations(mt_string)
-            return jsonify({
-                "status": "success",
-                "trades": [trade.id for trade in trades]
-            })
+            return jsonify(
+                {"status": "success", "trades": [trade.id for trade in trades]}
+            )
         except Exception as e:
             db.session.rollback()  # Rollback on error
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 400
-    elif request.method == 'PUT':
+            return jsonify({"status": "error", "message": str(e)}), 400
+    elif request.method == "PUT":
         try:
             data = request.get_json()
 
             # Extract data from request
-            strategy = data.get('strategy')
+            strategy = data.get("strategy")
             # Note: 'order' in request maps to 'order_type' in model
-            order_type = data.get('order')
-            contracts = float(data.get('contracts'))
-            ticker = data.get('ticker')
-            position_size = float(data.get('position_size'))
+            order_type = data.get("order")
+            contracts = float(data.get("contracts"))
+            ticker = data.get("ticker")
+            position_size = float(data.get("position_size"))
 
             # Update all matching trades
             matching_trades = Trade.update_matching_trades(
@@ -192,24 +219,25 @@ def trades_association():
                 order_type=order_type,
                 contracts=contracts,
                 ticker=ticker,
-                position_size=position_size
+                position_size=position_size,
             )
 
             if not matching_trades:
-                return jsonify({
-                    "status": "warning",
-                    "message": "No matching trades found"
-                }), 200
+                return (
+                    jsonify(
+                        {"status": "warning", "message": "No matching trades found"}
+                    ),
+                    200,
+                )
 
-            return jsonify({
-                "status": "success",
-                "message": f"Updated {len(matching_trades)} trades",
-                "updated_trades": [trade.id for trade in matching_trades]
-            })
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": f"Updated {len(matching_trades)} trades",
+                    "updated_trades": [trade.id for trade in matching_trades],
+                }
+            )
 
         except Exception as e:
             db.session.rollback()
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 400
+            return jsonify({"status": "error", "message": str(e)}), 400
