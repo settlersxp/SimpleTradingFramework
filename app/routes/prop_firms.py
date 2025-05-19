@@ -56,7 +56,6 @@ def create_prop_firm():
 def get_prop_firms():
     user = User.get_user_by_token(request.headers.get("X-Session-ID"),
                                   request.headers.get("X-User-ID"))
-    print(f"DEBUG: get_prop_firms user from g: {user.id if user else 'None'}")
     all_prop_firms = PropFirm.query.all()
     trade_associations = db.session.query(
         PropFirmTrades.prop_firm_id,

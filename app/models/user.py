@@ -32,7 +32,13 @@ class User(db.Model):
         return f"<User {self.email}>"
 
     def get_prop_firms(self) -> List["PropFirm"]:
-        """Manually get all prop firms associated with this user"""
+        """
+        Get prop firms for this user.
+
+        Each returned PropFirm object has 'active_for_user' = True.
+        This means the association exists.
+        Access global status via 'prop_firm.is_active'.
+        """
         from app.models.prop_firm import PropFirm
 
         stmt = (
@@ -40,7 +46,12 @@ class User(db.Model):
             .join(user_prop_firm)
             .where(user_prop_firm.c.user_id == self.id)
         )
-        return db.session.execute(stmt).scalars().all()
+        prop_firms_list = db.session.execute(stmt).scalars().all()
+
+        for pf_object in prop_firms_list:
+            pf_object.active_for_user = True  # Dynamically add attribute
+
+        return prop_firms_list
 
     def add_prop_firm(self, prop_firm):
         """Manually add a prop firm to this user"""
@@ -133,11 +144,27 @@ class User(db.Model):
         return {"id": self.id, "token": self.token, "logged_at": self.logged_at}
 
     def full_user(self):
+        prop_firms_details = []
+        # get_prop_firms() will now return PropFirm objects with .active_for_user
+        for pf in self.get_prop_firms():
+            prop_firms_details.append(
+                {
+                    "id": pf.id,
+                    "name": pf.name,
+                    "is_active_globally": pf.is_active,  # Global status
+                    "active_for_user": pf.active_for_user,  # User association
+                }
+            )
+
+        trading_strategies_ids = []
+        for ts in self.get_trading_strategies():
+            trading_strategies_ids.append(ts.id)
+
         return {
             "id": self.id,
             "email": self.email,
-            "prop_firms": [pf.id for pf in self.get_prop_firms()],
-            "trading_strategies": [ts.id for ts in self.get_trading_strategies()],
+            "prop_firms": prop_firms_details,
+            "trading_strategies": trading_strategies_ids,
         }
 
     def login(self):

@@ -1,39 +1,51 @@
-from flask import Blueprint, jsonify, session
+from flask import Blueprint, jsonify, request
 from app import db
 from app.models.user import User
 from app.models.prop_firm import PropFirm
 from app.routes.auth import login_required
 
-user_prop_firms_bp = Blueprint('user_prop_firms', __name__)
+user_prop_firms_bp = Blueprint("user_prop_firms", __name__)
 
-@user_prop_firms_bp.route('/user/prop_firms', methods=['GET'])
+
+@user_prop_firms_bp.route("/user/prop_firms", methods=["GET"])
 @login_required
-def get_user_prop_firms(user):
+def get_user_prop_firms():
+    user = User.get_user_by_token(
+        request.headers.get("X-Session-ID"), request.headers.get("X-User-ID")
+    )
     prop_firms = [pf.to_dict() for pf in user.get_prop_firms()]
-    return jsonify({'prop_firms': prop_firms}), 200
+    return jsonify({"prop_firms": prop_firms}), 200
 
-@user_prop_firms_bp.route('/user/prop_firms/<int:prop_firm_id>', methods=['POST'])
+
+@user_prop_firms_bp.route("/user/prop_firms/<int:prop_firm_id>", methods=["POST"])
 @login_required
-def add_prop_firm_to_user(user, prop_firm_id):
+def add_prop_firm_to_user(prop_firm_id):
+    user = User.get_user_by_token(
+        request.headers.get("X-Session-ID"), request.headers.get("X-User-ID")
+    )
     prop_firm = PropFirm.query.get(prop_firm_id)
     if not prop_firm:
-        return jsonify({'error': 'Prop firm not found'}), 404
-    
+        return jsonify({"error": "Prop firm not found"}), 404
+
     if user.add_prop_firm(prop_firm):
         db.session.commit()
-        return jsonify({'message': 'Prop firm added to user successfully'}), 200
+        return jsonify({"message": "Prop firm added to user successfully"}), 200
     else:
-        return jsonify({'message': 'Prop firm already associated with user'}), 200
+        return jsonify({"message": "Prop firm already associated with user"}), 200
 
-@user_prop_firms_bp.route('/user/prop_firms/<int:prop_firm_id>', methods=['DELETE'])
+
+@user_prop_firms_bp.route("/user/prop_firms/<int:prop_firm_id>", methods=["DELETE"])
 @login_required
-def remove_prop_firm_from_user(user, prop_firm_id):
+def remove_prop_firm_from_user(prop_firm_id):
+    user = User.get_user_by_token(
+        request.headers.get("X-Session-ID"), request.headers.get("X-User-ID")
+    )
     prop_firm = PropFirm.query.get(prop_firm_id)
     if not prop_firm:
-        return jsonify({'error': 'Prop firm not found'}), 404
-    
+        return jsonify({"error": "Prop firm not found"}), 404
+
     if user.remove_prop_firm(prop_firm):
         db.session.commit()
-        return jsonify({'message': 'Prop firm removed from user successfully'}), 200
+        return jsonify({"message": "Prop firm removed from user successfully"}), 200
     else:
-        return jsonify({'message': 'Prop firm not associated with user'}), 404
+        return jsonify({"message": "Prop firm not associated with user"}), 404
