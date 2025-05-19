@@ -140,6 +140,7 @@ def add_trade_associations(mt_string, create_trade=True):
                 )
                 continue
 
+            print(f"Current prop firm {prop_firm.name}")
             # If association exists, use the label when placing the trade
             outcome = prop_firm.trading.place_trade(trade, label=association.label)
             if not outcome.success:

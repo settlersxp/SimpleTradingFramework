@@ -1,10 +1,14 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
 from app.models.prop_firm import PropFirm
 from app import db
 from app.models.trade_pairs import TradePairs
 from app.models.trade_association import PropFirmTrades
-from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
+from app.models.prop_firm_trade_pair_association import (
+    PropFirmTradePairAssociation,
+)
+from app.models.user import User
 from app.routes.auth import login_required
+from app.models.user import user_prop_firm
 
 bp = Blueprint("prop_firms", __name__)
 
@@ -18,8 +22,6 @@ def create_prop_firm():
     """
     try:
         data = request.get_json()
-
-        # Create a new prop firm
         prop_firm = PropFirm(
             name=data.get("name"),
             full_balance=float(data.get("full_balance", 0)),
@@ -32,10 +34,8 @@ def create_prop_firm():
             port=data.get("port"),
             platform_type=data.get("platform_type"),
         )
-
         db.session.add(prop_firm)
         db.session.commit()
-
         return (
             jsonify(
                 {
@@ -54,71 +54,55 @@ def create_prop_firm():
 @login_required
 @bp.route("/", methods=["GET"])
 def get_prop_firms():
-    """
-    Get all prop firms.
-    GET: Get all prop firms and their trade associations.
-    """
-    # First query: Get all prop firms
-    prop_firms = PropFirm.query.all()
-
-    # Second query: Get all trade associations
-    associations = db.session.query(
+    user = User.get_user_by_token(request.headers.get("X-Session-ID"),
+                                  request.headers.get("X-User-ID"))
+    print(f"DEBUG: get_prop_firms user from g: {user.id if user else 'None'}")
+    all_prop_firms = PropFirm.query.all()
+    trade_associations = db.session.query(
         PropFirmTrades.prop_firm_id,
         PropFirmTrades.trade_id,
         PropFirmTrades.platform_id,
         PropFirmTrades.response,
     ).all()
-
-    # Create a dictionary to group trade associations by prop firm
     trade_map = {}
-    for assoc in associations:
-        prop_firm_id = assoc.prop_firm_id
-        if prop_firm_id not in trade_map:
-            trade_map[prop_firm_id] = []
-
-        trade_map[prop_firm_id].append(
-            {
-                "trade_id": assoc.trade_id,
-                "platform_id": assoc.platform_id,
-                "response": assoc.response,
-            }
+    for pf_id, t_id, plat_id, resp in trade_associations:
+        if pf_id not in trade_map:
+            trade_map[pf_id] = []
+        trade_map[pf_id].append(
+            {"trade_id": t_id, "platform_id": plat_id, "response": resp}
         )
 
-    # Build response with combined data
-    return jsonify(
-        [
-            {
-                "id": pf.id,
-                "name": pf.name,
-                "full_balance": pf.full_balance,
-                "available_balance": pf.available_balance,
-                "drawdown_percentage": pf.drawdown_percentage,
-                "username": pf.username,
-                "password": pf.password,
-                "ip_address": pf.ip_address,
-                "port": pf.port,
-                "platform_type": pf.platform_type,
-                "is_active": pf.is_active,
-                "created_at": pf.created_at.isoformat() if pf.created_at else None,
-                "trades": trade_map.get(pf.id, []),
-            }
-            for pf in prop_firms
-        ]
+    user_assoc_q = db.session.query(user_prop_firm.c.prop_firm_id).filter(
+        user_prop_firm.c.user_id == user.id
     )
+    assoc_pf_ids = {item[0] for item in user_assoc_q.all()}
+    res_data = [
+        {
+            "id": pf.id,
+            "name": pf.name,
+            "full_balance": pf.full_balance,
+            "available_balance": pf.available_balance,
+            "drawdown_percentage": pf.drawdown_percentage,
+            "username": pf.username,
+            "password": pf.password,
+            "ip_address": pf.ip_address,
+            "port": pf.port,
+            "platform_type": pf.platform_type,
+            "is_active": pf.id in assoc_pf_ids,
+            "created_at": pf.created_at.isoformat() if pf.created_at else None,
+            "trades": trade_map.get(pf.id, []),
+        }
+        for pf in all_prop_firms
+    ]
+    return jsonify(res_data)
 
 
 @login_required
 @bp.route("/<int:prop_firm_id>", methods=["DELETE", "GET"])
 def delete_get_update_prop_firm(prop_firm_id):
-    """
-    Delete or get/update a prop firm.
-    DELETE: Delete a prop firm.
-    GET: Get a prop firm.
-    """
     prop_firm = db.session.get(PropFirm, prop_firm_id)
     if not prop_firm:
         return jsonify({"error": "Prop firm not found"}), 404
-
     if request.method == "DELETE":
         try:
             db.session.delete(prop_firm)
@@ -127,38 +111,25 @@ def delete_get_update_prop_firm(prop_firm_id):
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": str(e)}), 500
-
-    # GET method
     return jsonify(prop_firm.to_dict())
 
 
 @login_required
 @bp.route("/<int:prop_firm_id>/trades", methods=["GET"])
 def trades_for_prop_firm(prop_firm_id):
-    """
-    Get all trades associated with a prop firm.
-    GET: Get all trades and their associations.
-    """
     prop_firm = db.session.get(PropFirm, prop_firm_id)
     if not prop_firm:
         return jsonify({"error": "Prop firm not found"}), 404
-
-    # Get all trades associated with this prop firm
-    associations = (
-        db.session.query(PropFirmTrades).filter_by(prop_firm_id=prop_firm_id).all()
-    )
-
+    assoc_q = db.session.query(PropFirmTrades).filter_by(prop_firm_id=prop_firm_id)
     trades_data = []
-    for assoc in associations:
+    for assoc in assoc_q.all():
         trade = assoc.trade
         if not trade:
             continue
-
         trade_data = trade.to_dict()
         trade_data["platform_id"] = assoc.platform_id
         trade_data["response"] = assoc.response
         trades_data.append(trade_data)
-
     return jsonify({"prop_firm": prop_firm.to_dict(), "trades": trades_data})
 
 
@@ -167,12 +138,9 @@ def trades_for_prop_firm(prop_firm_id):
 def update_prop_firm(prop_firm_id):
     try:
         data = request.get_json()
-
         prop_firm = db.session.get(PropFirm, prop_firm_id)
         if not prop_firm:
             return jsonify({"error": "Prop firm not found"}), 404
-
-        # Update fields if provided
         if "name" in data:
             prop_firm.name = data["name"]
         if "full_balance" in data:
@@ -193,16 +161,12 @@ def update_prop_firm(prop_firm_id):
             prop_firm.port = data["port"]
         if "platform_type" in data:
             prop_firm.platform_type = data["platform_type"]
-
-        # Update downdraft percentage if full balance changed
         if "full_balance" in data:
             prop_firm.set_available_balance_to_full_balance()
             prop_firm.update_drawdown_percentage_on_full_balance_update(
                 float(data["full_balance"])
             )
-
         db.session.commit()
-
         return jsonify(
             {
                 "status": "success",
@@ -218,67 +182,40 @@ def update_prop_firm(prop_firm_id):
 @login_required
 @bp.route("/<int:prop_firm_id>/trade_pairs", methods=["GET", "POST"])
 def manage_trade_pairs(prop_firm_id):
-    """
-    Manage trade pairs for a prop firm.
-    GET: Get all trade pairs and their associations.
-    POST: Update the associations for a prop firm.
-    """
     prop_firm = db.session.get(PropFirm, prop_firm_id)
     if not prop_firm:
         return jsonify({"error": "Prop firm not found"}), 404
-
     if request.method == "GET":
-        # Get all trade pairs
-        trade_pairs = TradePairs.query.all()
-
-        # Get current associations
-        current_associations = PropFirmTradePairAssociation.query.filter_by(
+        tp = TradePairs.query.all()
+        curr_assoc_q = PropFirmTradePairAssociation.query.filter_by(
             prop_firm_id=prop_firm_id
-        ).all()
-
-        # Create a dict of current associations for easy lookup
-        current_assoc_dict = {
-            assoc.trade_pair_id: assoc.label for assoc in current_associations
-        }
-
-        # Format response
-        trade_pairs_data = []
-        for pair in trade_pairs:
-            is_associated = pair.id in current_assoc_dict
-            trade_pairs_data.append(
-                {
-                    "id": pair.id,
-                    "name": pair.name,
-                    "is_associated": is_associated,
-                    "current_label": current_assoc_dict.get(pair.id, ""),
-                }
-            )
-
-        return jsonify(
-            {"prop_firm": prop_firm.to_dict(), "trade_pairs": trade_pairs_data}
         )
-
+        curr_assoc_map = {ca.trade_pair_id: ca.label for ca in curr_assoc_q.all()}
+        tp_data = [
+            {
+                "id": p.id,
+                "name": p.name,
+                "is_associated": p.id in curr_assoc_map,
+                "current_label": curr_assoc_map.get(p.id, ""),
+            }
+            for p in tp
+        ]
+        return jsonify({"prop_firm": prop_firm.to_dict(), "trade_pairs": tp_data})
     elif request.method == "POST":
         try:
             data = request.get_json()
-            associations = data.get("associations", [])
-
-            # Remove all existing associations
+            assoc_data = data.get("associations", [])
             PropFirmTradePairAssociation.query.filter_by(
                 prop_firm_id=prop_firm_id
             ).delete()
-
-            # Add new associations
-            for assoc in associations:
+            for ad in assoc_data:
                 new_assoc = PropFirmTradePairAssociation(
                     prop_firm_id=prop_firm_id,
-                    trade_pair_id=assoc["trade_pair_id"],
-                    label=assoc["label"],
+                    trade_pair_id=ad["trade_pair_id"],
+                    label=ad["label"],
                 )
                 db.session.add(new_assoc)
-
             db.session.commit()
-
             return jsonify(
                 {
                     "status": "success",
@@ -293,47 +230,29 @@ def manage_trade_pairs(prop_firm_id):
 @login_required
 @bp.route("/sync", methods=["POST"])
 def sync_prop_firms():
-    """
-    Synchronize all active prop firms with MT5.
-    Updates account information and creates new trades.
-    """
     try:
-        # Get prop firm ID from request if specified
-        prop_firm_id = request.json.get("prop_firm_id") if request.json else None
-
-        if prop_firm_id:
-            # Sync specific prop firm
-            prop_firm = PropFirm.query.get(prop_firm_id)
-            if not prop_firm:
+        prop_firm_id_req = request.json.get("prop_firm_id") if request.json else None
+        if prop_firm_id_req:
+            pf_sync = PropFirm.query.get(prop_firm_id_req)
+            if not pf_sync:
                 return jsonify({"error": "Prop firm not found"}), 404
-
-            result = prop_firm.trading.sync_prop_firm(prop_firm)
-            return jsonify(
-                {
-                    "prop_firm": result,
-                    "success": True,
-                    "message": "Prop firm synced successfully",
-                }
-            )
+            result = pf_sync.trading.sync_prop_firm(pf_sync)
+            msg = "Prop firm synced successfully"
+            return jsonify({"prop_firm": result, "success": True, "message": msg})
         else:
-            # Sync all active prop firms
-            prop_firms = PropFirm.query.filter_by(is_active=True).all()
+            firms_to_sync = PropFirm.query.filter_by(is_active=True).all()
             results = {}
-            for prop_firm in prop_firms:
-                result = prop_firm.trading.sync_prop_firm(prop_firm)
-                results[prop_firm.id] = result
-
-            # Count successes and failures
-            success_count = sum(1 for success in results.values() if success)
-            total_count = len(results)
-
+            for pf in firms_to_sync:
+                results[pf.id] = pf.trading.sync_prop_firm(pf)
+            s_count = sum(1 for r in results.values() if r)
+            t_count = len(results)
+            sync_msg = f"Synced {s_count} out of {t_count} prop firms"
             return jsonify(
                 {
                     "success": True,
-                    "message": f"Synced {success_count} out of {total_count} prop firms",
+                    "message": sync_msg,
                     "results": results,
                 }
             )
-
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

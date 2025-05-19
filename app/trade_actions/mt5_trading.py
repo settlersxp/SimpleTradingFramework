@@ -252,7 +252,7 @@ class MT5Trading(TradingInterface):
                 request = {
                     "action": mt5.TRADE_ACTION_DEAL,
                     "symbol": label,
-                    "volume": max(trade.contracts, 0.1),
+                    "volume": max(trade.contracts, 0.01),
                     "type": order_type,
                     "price": price,
                     "deviation": max(int(trade.position_size), 20),
