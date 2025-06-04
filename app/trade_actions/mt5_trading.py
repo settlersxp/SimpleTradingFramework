@@ -71,10 +71,19 @@ class MT5Trading(TradingInterface):
         """
         try:
             self.connect(self.credentials)
-
+            
+            existing_trades = mt5.positions_get()
             result = mt5.Close(
                 symbol=old_trade_response[10][3], ticket=old_trade_response[2]
             )
+            remaining_trades = mt5.positions_get()
+            if len(remaining_trades) != len(existing_trades) - 1:
+                return ExecuteTradeReturn(
+                    success=False,
+                    message="Trade failed to be canceled even if the broker returned a success code",
+                    trade_id=None,
+                    details={},
+                )
             if not result:
                 error_message = f"Error canceling trade: {old_trade_response[10][3]} - {old_trade_response[2]}"
                 print(error_message)
