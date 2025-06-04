@@ -112,8 +112,10 @@ class MT5Trading(TradingInterface):
         with self.queue_lock:
             if (
                 self.last_trade_time is not None
-                and (current_time - self.last_trade_time).total_seconds()
-                < self.cooldown_period
+                and (
+                    (current_time - self.last_trade_time).total_seconds()
+                    < self.cooldown_period
+                )
             ):
                 # Add to queue if we're in cooldown period
                 logger.info("Trade for %s added to queue (cooldown active)", label)
@@ -141,12 +143,13 @@ class MT5Trading(TradingInterface):
                     details={},
                     queued=True,
                 )
-
-            # If not in cooldown, execute the trade immediately
-            result = self._execute_trade(trade, label)
+            else:
+                logger.info("Executing trade immediately")
+                # If not in cooldown, execute the trade immediately
+                result = self._execute_trade(trade, label)
 
             if result.success:
-                self.last_trade_time = current_time
+                self.last_trade_time = datetime.now()
 
             return result
 
@@ -156,8 +159,6 @@ class MT5Trading(TradingInterface):
             if not self.trade_queue:
                 self.processing_timer = None
                 return
-
-            current_time = datetime.now()
 
             # Process the oldest trade in the queue
             trade, label, queue_time = self.trade_queue.pop(0)
@@ -171,7 +172,7 @@ class MT5Trading(TradingInterface):
             result = self._execute_trade(trade, label)
 
             if result["success"]:
-                self.last_trade_time = current_time
+                self.last_trade_time = datetime.now()
 
             # If there are more trades in the queue,
             # schedule the next processing
@@ -247,6 +248,13 @@ class MT5Trading(TradingInterface):
                 mt5.TRADE_RETCODE_DONE_PARTIAL,
             ]
 
+            bad_return_codes = [
+                mt5.TRADE_RETCODE_INVALID_FILL,
+                mt5.TRADE_RETCODE_PRICE_OFF,
+                mt5.TRADE_RETCODE_MARKET_CLOSED,
+            ]
+
+            existing_trades = mt5.positions_get()
             for filling_type in list_of_filling_types:
                 # Prepare trade request
                 request = {
@@ -266,12 +274,9 @@ class MT5Trading(TradingInterface):
                 if result.retcode == mt5.TRADE_RETCODE_INVALID_FILL:
                     continue
 
-                # exit loop in case of success
-                if result.retcode == mt5.TRADE_RETCODE_PLACED:
-                    break
-
-                # The broker does not offer a price for this type of order
-                if result.retcode == mt5.TRADE_RETCODE_PRICE_OFF:
+                # The broker does not offer a price for 
+                # this type of order, market is closed or invalid fill
+                if result.retcode in bad_return_codes:
                     break
 
                 # Placed successfully
@@ -306,6 +311,20 @@ class MT5Trading(TradingInterface):
                     },
                 )
 
+            new_trades = mt5.positions_get()
+            if len(new_trades) != len(existing_trades) + 1:
+                return ExecuteTradeReturn(
+                    success=False,
+                    message="Trade failed to be placed even if the broker returned a success code",
+                    trade_id=None,
+                    details={},
+                )
+            
+            # From the new trades filter the one that is not in the existing trades
+            placed_trade = [
+                trade for trade in new_trades if trade not in existing_trades
+            ][0]
+
             # Return the trade details upon successful placement
             return ExecuteTradeReturn(
                 success=True,
@@ -316,7 +335,7 @@ class MT5Trading(TradingInterface):
                     "price": result.price,
                     "request_id": result.request_id,
                     "buy_request": request,
-                    "response": result,
+                    "response": placed_trade,
                 },
             )
         except Exception as e:
