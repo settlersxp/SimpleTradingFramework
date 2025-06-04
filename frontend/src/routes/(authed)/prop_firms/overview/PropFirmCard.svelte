@@ -9,6 +9,7 @@
         firm: PropFirm;
         syncing: boolean;
         onSync: (firmId: number) => void;
+        onToggleActive: (firmId: number, status: boolean) => Promise<PropFirm>;
     }>();
 </script>
 
@@ -17,6 +18,7 @@
         firm={props.firm}
         syncing={props.syncing}
         onSync={props.onSync}
+        onToggleActive={props.onToggleActive}
     />
     <AccountInformation firm={props.firm} />
     <TradePairs trade_pairs={props.firm.tradePairs} />

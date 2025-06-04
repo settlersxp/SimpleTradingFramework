@@ -3,6 +3,7 @@
     import PropFirmCard from "./PropFirmCard.svelte";
 
     const props = $props<{ data: { propFirms: PropFirm[] } }>();
+    let propFirms = $state(props.data.propFirms);
     let syncing = $state(false);
     let syncError = $state<string | null>(null);
 
@@ -42,14 +43,53 @@
         }
     }
 
+    async function toggleActive(firmId: number, status: boolean) {
+        console.log("Toggling active for firm:", firmId);
+        try {
+            const response = await fetch(
+                `/api/prop_firms/${firmId}/toggle_active`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ status: status }),
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to toggle active");
+            }
+
+            const result = await response.json();
+            const updatedFirm = result.prop_firm;
+
+            // Update the prop firm in the local state
+            propFirms = propFirms.map((firm: PropFirm) =>
+                firm.id === updatedFirm.id ? updatedFirm : firm,
+            );
+
+            console.log("Toggled active for firm:", updatedFirm);
+
+            return updatedFirm;
+        } catch (error) {
+            console.error("Error toggling active:", error);
+            syncError =
+                error instanceof Error ? error.message : "An error occurred";
+        }
+    }
+
     // Function to update a firm in the list without reloading the page
     function updateFirmInList(result: any) {
-        // This is a placeholder for reactive update logic
-        // In a real implementation, you'd update the specific firm in the list
-        console.log("Updated firm data:", result);
-
-        // For now, we'll just reload to show the changes
-        window.location.reload();
+        if (result && result.prop_firm) {
+            const updatedFirm = result.prop_firm;
+            propFirms = propFirms.map((firm: PropFirm) =>
+                firm.id === updatedFirm.id ? updatedFirm : firm,
+            );
+        } else {
+            // For now, we'll just reload to show the changes
+            window.location.reload();
+        }
     }
 
     async function syncAllPropFirms() {
@@ -113,8 +153,13 @@
         </div>
 
         <div class="grid grid-cols-1 gap-8">
-            {#each props.data.propFirms as firm}
-                <PropFirmCard {firm} {syncing} onSync={syncPropFirm} />
+            {#each propFirms as firm}
+                <PropFirmCard
+                    {firm}
+                    {syncing}
+                    onSync={syncPropFirm}
+                    onToggleActive={toggleActive}
+                />
             {/each}
         </div>
     </div>
