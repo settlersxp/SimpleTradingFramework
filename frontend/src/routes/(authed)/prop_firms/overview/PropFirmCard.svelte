@@ -9,7 +9,7 @@
         firm: PropFirm;
         syncing: boolean;
         onSync: (firmId: number) => void;
-        onToggleActive: (firmId: number, status: boolean) => Promise<PropFirm>;
+        onToggleActive: (firmId: number, status: boolean) => void;
     }>();
 </script>
 

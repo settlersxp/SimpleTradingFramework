@@ -5,7 +5,7 @@
         firm: PropFirm;
         syncing: boolean;
         onSync: (firmId: number) => void;
-        onToggleActive: (firmId: number, status: boolean) => Promise<PropFirm>;
+        onToggleActive: (firmId: number, status: boolean) => void;
     }>();
 </script>
 
@@ -16,12 +16,8 @@
         </h2>
         <div class="flex items-center space-x-4">
             <button
-                onclick={async () => {
-                    await props.onToggleActive(
-                        props.firm.id,
-                        !props.firm.is_active,
-                    );
-                }}
+                onclick={() =>
+                    props.onToggleActive(props.firm.id, !props.firm.is_active)}
                 class={`px-3 py-1 rounded-full text-sm font-medium ${props.firm.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
             >
                 {props.firm.is_active ? "Active" : "Inactive"}

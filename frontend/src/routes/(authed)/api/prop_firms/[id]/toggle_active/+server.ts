@@ -5,8 +5,6 @@ export const POST: RequestHandler = async ({ request, params, fetch }) => {
     const { id } = params;
     const { status } = await request.json();
 
-    console.log("Toggling active for firm:", id, status);
-
     try {
         const response = await fetch(`/python/prop_firms/${id}`, {
             method: "PUT",
