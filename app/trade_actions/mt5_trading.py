@@ -72,6 +72,7 @@ class MT5Trading(TradingInterface):
         try:
             self.connect(self.credentials)
             
+
             existing_trades = mt5.positions_get()
             result = mt5.Close(
                 symbol=old_trade_response[10][3], ticket=old_trade_response[2]
