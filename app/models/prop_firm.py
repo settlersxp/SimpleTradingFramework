@@ -1,11 +1,15 @@
 from app import db, TimezoneAwareModel
-from datetime import datetime
-from app.models.trade import Trade
+from datetime import datetime, timezone
+from app.models.signal import Signal
 from app.models.user import user_prop_firm
 import importlib
-from typing import Optional, ClassVar, List
+from typing import Optional, ClassVar, List, TYPE_CHECKING
 from app.trade_actions.trade_interface import TradingInterface
 from sqlalchemy import select
+
+if TYPE_CHECKING:
+    from app.models.user import User
+    from app.models.trade import Trade
 
 
 class PropFirm(TimezoneAwareModel):
@@ -13,7 +17,10 @@ class PropFirm(TimezoneAwareModel):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.now(timezone.utc),
+    )
     full_balance = db.Column(db.Float, nullable=False)
     available_balance = db.Column(db.Float, nullable=False)
     drawdown_percentage = db.Column(db.Float, nullable=False)
@@ -25,17 +32,18 @@ class PropFirm(TimezoneAwareModel):
     platform_type = db.Column(db.String(100), nullable=True)
 
     # One to many relationship with trades in a different association table
-    trade_associations = db.relationship("PropFirmTrades", back_populates="prop_firm")
+    trade_associations = db.relationship(
+        "Trade",
+        back_populates="prop_firm",
+    )
 
     _trading_instance: ClassVar[Optional[TradingInterface]] = None
 
-    def get_trade_associations(self) -> List["PropFirmTrades"]:
+    def get_trade_associations(self) -> List["Trade"]:
         return self.trade_associations
 
     def get_users(self) -> List["User"]:
         """Manually get all users associated with this prop firm"""
-        from app.models.user import User
-
         stmt = (
             select(User)
             .join(user_prop_firm)
@@ -61,7 +69,9 @@ class PropFirm(TimezoneAwareModel):
             # Create the association
             db.session.execute(
                 user_prop_firm.insert().values(
-                    user_id=user.id, prop_firm_id=self.id, created_at=datetime.utcnow()
+                    user_id=user.id,
+                    prop_firm_id=self.id,
+                    created_at=datetime.now(timezone.utc),
                 )
             )
             return True
@@ -121,12 +131,12 @@ class PropFirm(TimezoneAwareModel):
         self.update_drawdown_percentage()
 
     # When a trade is added, the prop firm's available balance should be updated
-    def update_available_balance(self, trade: Trade):
+    def update_available_balance(self, trade: Signal):
         self.available_balance -= abs(trade.position_size)
         self.update_drawdown_percentage()
 
     # When a trade is deleted, the prop firm's available balance should be updated
-    def update_available_balance_on_delete(self, trade: Trade):
+    def update_available_balance_on_delete(self, trade: Signal):
         self.available_balance += abs(trade.position_size)
         self.update_drawdown_percentage()
 

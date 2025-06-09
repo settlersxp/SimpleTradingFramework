@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, g
 from app.models.prop_firm import PropFirm
 from app import db
 from app.models.trade_pairs import TradePairs
-from app.models.trade_association import PropFirmTrades
+from app.models.trade import Trade
 from app.models.prop_firm_trade_pair_association import (
     PropFirmTradePairAssociation,
 )
@@ -54,14 +54,15 @@ def create_prop_firm():
 @login_required
 @bp.route("/", methods=["GET"])
 def get_prop_firms():
-    user = User.get_user_by_token(request.headers.get("X-Session-ID"),
-                                  request.headers.get("X-User-ID"))
+    user = User.get_user_by_token(
+        request.headers.get("X-Session-ID"), request.headers.get("X-User-ID")
+    )
     all_prop_firms = PropFirm.query.all()
     trade_associations = db.session.query(
-        PropFirmTrades.prop_firm_id,
-        PropFirmTrades.trade_id,
-        PropFirmTrades.platform_id,
-        PropFirmTrades.response,
+        Trade.prop_firm_id,
+        Trade.signal_id,
+        Trade.platform_id,
+        Trade.response,
     ).all()
     trade_map = {}
     for pf_id, t_id, plat_id, resp in trade_associations:
@@ -119,7 +120,7 @@ def trades_for_prop_firm(prop_firm_id):
     prop_firm = db.session.get(PropFirm, prop_firm_id)
     if not prop_firm:
         return jsonify({"error": "Prop firm not found"}), 404
-    assoc_q = db.session.query(PropFirmTrades).filter_by(prop_firm_id=prop_firm_id)
+    assoc_q = db.session.query(Trade).filter_by(prop_firm_id=prop_firm_id)
     trades_data = []
     for assoc in assoc_q.all():
         trade = assoc.trade

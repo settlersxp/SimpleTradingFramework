@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.execute_trade_return import ExecuteTradeReturn
-    from app.models.trade import Trade
+    from app.models.signal import Signal
+
 
 class TradingInterface(ABC):
     """Abstract base class for trading platform interactions"""
@@ -24,7 +25,7 @@ class TradingInterface(ABC):
         pass
 
     @abstractmethod
-    def place_trade(self, trade: 'Trade', label: str) -> 'ExecuteTradeReturn':
+    def place_trade(self, trade: "Signal", label: str) -> "ExecuteTradeReturn":
         """
         Place a trade on the platform
 

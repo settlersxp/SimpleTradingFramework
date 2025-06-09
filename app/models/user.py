@@ -1,17 +1,33 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import select
-from typing import List
+from typing import List, TYPE_CHECKING
 import uuid
+
+if TYPE_CHECKING:
+    from app.models.prop_firm import PropFirm
+    from app.models.trading_strategy import TradingStrategy, user_trading_strategy
 
 # Many-to-many relationship table between users and prop firms
 user_prop_firm = db.Table(
     "user_prop_firm",
-    db.Column("user_id", db.Integer, db.ForeignKey("users.id"), primary_key=True),
     db.Column(
-        "prop_firm_id", db.Integer, db.ForeignKey("prop_firms.id"), primary_key=True
+        "user_id",
+        db.Integer,
+        db.ForeignKey("users.id"),
+        primary_key=True,
     ),
-    db.Column("created_at", db.DateTime, default=datetime.utcnow),
+    db.Column(
+        "prop_firm_id",
+        db.Integer,
+        db.ForeignKey("prop_firms.id"),
+        primary_key=True,
+    ),
+    db.Column(
+        "created_at",
+        db.DateTime,
+        default=datetime.now(timezone.utc),
+    ),
 )
 
 
@@ -21,11 +37,16 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)  # Plain text for now
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
     )
-    logged_at = db.Column(db.DateTime, default=datetime.utcnow)
+    logged_at = db.Column(
+        db.DateTime,
+        default=datetime.now(timezone.utc),
+    )
     token = db.Column(db.String(120), nullable=True)
 
     def __repr__(self):
@@ -39,8 +60,6 @@ class User(db.Model):
         This means the association exists.
         Access global status via 'prop_firm.is_active'.
         """
-        from app.models.prop_firm import PropFirm
-
         stmt = (
             select(PropFirm)
             .join(user_prop_firm)
@@ -73,7 +92,7 @@ class User(db.Model):
                 user_prop_firm.insert().values(
                     user_id=self.id,
                     prop_firm_id=prop_firm.id,
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
                 )
             )
             return True
@@ -91,7 +110,6 @@ class User(db.Model):
 
     def get_trading_strategies(self) -> List["TradingStrategy"]:
         """Get all trading strategies associated with this user"""
-        from app.models.trading_strategy import TradingStrategy, user_trading_strategy
 
         stmt = (
             select(TradingStrategy)
@@ -141,7 +159,11 @@ class User(db.Model):
         return result.rowcount > 0
 
     def login_info(self):
-        return {"id": self.id, "token": self.token, "logged_at": self.logged_at}
+        return {
+            "id": self.id,
+            "token": self.token,
+            "logged_at": self.logged_at,
+        }
 
     def full_user(self):
         prop_firms_details = []
@@ -168,7 +190,7 @@ class User(db.Model):
         }
 
     def login(self):
-        self.logged_at = datetime.utcnow()
+        self.logged_at = datetime.now(timezone.utc)
         self.token = str(uuid.uuid4())
         db.session.commit()
 

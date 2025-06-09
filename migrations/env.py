@@ -91,37 +91,7 @@ def run_migrations_online():
             context.run_migrations()
 
 
-def has_table(table_name):
-    """Check if a table exists in the database"""
-    from sqlalchemy.engine.reflection import Inspector
-    from alembic import op
-    bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
-    return table_name in inspector.get_table_names()
-
-
-def has_column(table_name, column_name):
-    """Check if a column exists in a table"""
-    from sqlalchemy.engine.reflection import Inspector
-    from alembic import op
-    bind = op.get_bind()
-    inspector = Inspector.from_engine(bind)
-    columns = [c['name'] for c in inspector.get_columns(table_name)]
-    return column_name in columns
-
-
-# Add these functions to the context
-context.has_table = has_table
-context.has_column = has_column
-
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    try:
-        with current_app.app_context():
-            logging.info(
-                f"Attempting to connect to database: {current_app.config['SQLALCHEMY_DATABASE_URI']}")
-            run_migrations_online()
-    except Exception as e:
-        logging.error(f"Error connecting to database: {e}")
-        raise
+    run_migrations_online()

@@ -1,5 +1,5 @@
 from app import db, TimezoneAwareModel
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, TYPE_CHECKING
 from sqlalchemy import select
 
@@ -9,14 +9,23 @@ if TYPE_CHECKING:
 # Association table between users and trading strategies
 user_trading_strategy = db.Table(
     "user_trading_strategy",
-    db.Column("user_id", db.Integer, db.ForeignKey("users.id"), primary_key=True),
+    db.Column(
+        "user_id",
+        db.Integer,
+        db.ForeignKey("users.id"),
+        primary_key=True,
+    ),
     db.Column(
         "trading_strategy_id",
         db.Integer,
         db.ForeignKey("trading_strategies.id"),
         primary_key=True,
     ),
-    db.Column("created_at", db.DateTime, default=datetime.utcnow),
+    db.Column(
+        "created_at",
+        db.DateTime,
+        default=datetime.now(timezone.utc),
+    ),
 )
 
 
@@ -24,11 +33,23 @@ class TradingStrategy(TimezoneAwareModel):
     __tablename__ = "trading_strategies"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
-    description = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    name = db.Column(
+        db.String(100),
+        nullable=False,
+        unique=True,
+    )
+    description = db.Column(
+        db.Text,
+        nullable=True,
+    )
+    created_at = db.Column(
+        db.DateTime,
+        default=datetime.now(timezone.utc),
+    )
     updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        db.DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
     )
 
     def __repr__(self):
@@ -65,7 +86,7 @@ class TradingStrategy(TimezoneAwareModel):
                 user_trading_strategy.insert().values(
                     user_id=user.id,
                     trading_strategy_id=self.id,
-                    created_at=datetime.utcnow(),
+                    created_at=datetime.now(timezone.utc),
                 )
             )
             return True

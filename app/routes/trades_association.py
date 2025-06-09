@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app.models.prop_firm import PropFirm
+from app.models.signal import Signal
 from app.models.trade import Trade
-from app.models.trade_association import PropFirmTrades
 from app.models.trade_pairs import TradePairs
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app import db
@@ -15,10 +15,10 @@ def identify_old_trade(trade):
     """Identify the old trade for a given trade.
 
     Args:
-        trade (Trade): The trade to identify the old trade for.
+        trade (Signal): The trade to identify the old trade for.
     """
     old_trade = (
-        db.session.query(Trade)
+        db.session.query(Signal)
         .filter_by(
             order_type="buy" if trade.order_type == "sell" else "sell",
             ticker=trade.ticker,
@@ -67,8 +67,8 @@ def close_all_trade_associations(trade):
 
     prop_firms = (
         db.session.query(PropFirm)
-        .join(PropFirmTrades)
-        .filter_by(trade_id=old_trade.id)
+        .join(Trade)
+        .filter_by(signal_id=old_trade.id)
         .all()
     )
 
@@ -100,7 +100,7 @@ def add_trade_associations(mt_string, create_trade=True):
         [Trade]: One trade for each prop firm of each user.
     """
     trades = []
-    trade = Trade.from_mt_string(mt_string)
+    trade = Signal.from_mt_string(mt_string)
 
     if create_trade:
         db.session.add(trade)
@@ -148,9 +148,9 @@ def add_trade_associations(mt_string, create_trade=True):
                 continue
 
             # Add trade to prop firm with platform ID
-            prop_firm_trade = PropFirmTrades(
+            prop_firm_trade = Trade(
                 prop_firm_id=prop_firm.id,
-                trade_id=trade.id,
+                signal_id=trade.id,
                 platform_id=outcome.details["request_id"],
                 response=json.dumps(outcome.details["response"]),
             )
@@ -176,13 +176,13 @@ def trades_association():
         JSON response containing trade association data or status messages.
     """
     if request.method == "GET":
-        # Query trades through PropFirmTrades association table
+        # Query trades through Trades table
         trades_with_firms = (
-            db.session.query(Trade, PropFirm)
-            .select_from(Trade)
-            .join(PropFirmTrades, Trade.id == PropFirmTrades.c.trade_id)
-            .join(PropFirm, PropFirm.id == PropFirmTrades.c.prop_firm_id)
-            .order_by(Trade.created_at.desc())
+            db.session.query(Signal, PropFirm)
+            .select_from(Signal)
+            .join(Trade, Signal.id == Trade.signal_id)
+            .join(PropFirm, PropFirm.id == Trade.prop_firm_id)
+            .order_by(Signal.created_at.desc())
             .all()
         )
 
@@ -219,7 +219,7 @@ def trades_association():
             position_size = float(data.get("position_size"))
 
             # Update all matching trades
-            matching_trades = Trade.update_matching_trades(
+            matching_trades = Signal.update_matching_trades(
                 strategy=strategy,
                 order_type=order_type,
                 contracts=contracts,

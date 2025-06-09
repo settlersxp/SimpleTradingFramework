@@ -1,4 +1,4 @@
-import { json } from '@sveltejs/kit';
+import { json, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { dev } from '$app/environment';
 
@@ -16,7 +16,8 @@ export const GET: RequestHandler = async ({ cookies }) => {
         if (!response.ok) {
             // If authentication fails, clear the frontend cookie
             cookies.delete('user_id', { path: '/' });
-            return json({ message: 'Not authenticated' }, { status: 401 });
+            // redirect to login page with status 401 unauthorized
+            return redirect(302, '/login');
         }
 
         const result = await response.json();

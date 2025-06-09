@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import time
 from app import create_app, db
 from app.models.prop_firm import PropFirm
-from app.models.trade import Trade
+from app.models.signal import Signal
 from config import TestingConfig
 
 
@@ -193,7 +193,7 @@ class TestFlaskApp(unittest.TestCase):
 
         # the trade should be in the database
         with self.app_context:
-            trade = Trade.query.filter_by(id=trade_data["trade_id"]).first()
+            trade = Signal.query.filter_by(id=trade_data["trade_id"]).first()
             self.assertIsNotNone(trade)
             self.assertEqual(trade.strategy, "Heiken-Ashi CE LSMA [v5.1]")
             self.assertEqual(trade.order_type, "sell")
@@ -314,7 +314,7 @@ class TestFlaskApp(unittest.TestCase):
 
         # assert that the trade is still in the database
         with self.app_context:
-            trade = Trade.query.filter_by(id=trade_id).first()
+            trade = Signal.query.filter_by(id=trade_id).first()
             self.assertIsNotNone(trade)
 
     def test_upsert_prop_firm_info(self):

@@ -6,8 +6,8 @@ from datetime import datetime
 from threading import Timer, Lock
 from typing import TYPE_CHECKING
 from app.models.execute_trade_return import ExecuteTradeReturn
+from app.models.signal import Signal
 from app.models.trade import Trade
-from app.models.trade_association import PropFirmTrades
 from app import db
 
 if TYPE_CHECKING:
@@ -71,7 +71,6 @@ class MT5Trading(TradingInterface):
         """
         try:
             self.connect(self.credentials)
-            
 
             existing_trades = mt5.positions_get()
             result = mt5.Close(
@@ -108,7 +107,7 @@ class MT5Trading(TradingInterface):
                 details={"result": mt5.last_error()},
             )
 
-    def place_trade(self, trade: "Trade", label: str) -> ExecuteTradeReturn:
+    def place_trade(self, trade: "Signal", label: str) -> ExecuteTradeReturn:
         """
         Place trade on MT5 with queue system
 
@@ -120,12 +119,9 @@ class MT5Trading(TradingInterface):
         current_time = datetime.now()
 
         with self.queue_lock:
-            if (
-                self.last_trade_time is not None
-                and (
-                    (current_time - self.last_trade_time).total_seconds()
-                    < self.cooldown_period
-                )
+            if self.last_trade_time is not None and (
+                (current_time - self.last_trade_time).total_seconds()
+                < self.cooldown_period
             ):
                 # Add to queue if we're in cooldown period
                 logger.info("Trade for %s added to queue (cooldown active)", label)
@@ -195,7 +191,7 @@ class MT5Trading(TradingInterface):
             else:
                 self.processing_timer = None
 
-    def _execute_trade(self, trade: "Trade", label: str) -> ExecuteTradeReturn:
+    def _execute_trade(self, trade: "Signal", label: str) -> ExecuteTradeReturn:
         """Execute a trade with MT5"""
         self.connect(self.credentials)
 
@@ -284,7 +280,7 @@ class MT5Trading(TradingInterface):
                 if result.retcode == mt5.TRADE_RETCODE_INVALID_FILL:
                     continue
 
-                # The broker does not offer a price for 
+                # The broker does not offer a price for
                 # this type of order, market is closed or invalid fill
                 if result.retcode in bad_return_codes:
                     break
@@ -329,7 +325,7 @@ class MT5Trading(TradingInterface):
                     trade_id=None,
                     details={},
                 )
-            
+
             # From the new trades filter the one that is not in the existing trades
             placed_trade = [
                 trade for trade in new_trades if trade not in existing_trades
@@ -400,22 +396,22 @@ class MT5Trading(TradingInterface):
 
         for position in positions:
             # Check if trade already exists
-            existing_trade = PropFirmTrades.query.filter_by(
+            existing_trade = Trade.query.filter_by(
                 platform_id=str(position.ticket),
                 prop_firm_id=prop_firm.id,
             ).first()
 
             if not existing_trade:
-                new_trade = Trade(
+                new_trade = Signal(
                     strategy="MT5_SYNC",
                     order_type=position.type,
                     contracts=position.volume,
                     ticker=position.symbol,
                     position_size=abs(position.profit + position.swap),
                 )
-                new_trade = Trade.create_new_trade(new_trade)
+                new_trade = Signal.create_new_trade(new_trade)
 
-                PropFirmTrades.associate_trade(
+                Trade.associate_trade(
                     new_trade,
                     prop_firm,
                     str(position.ticket),
@@ -423,14 +419,14 @@ class MT5Trading(TradingInterface):
                 )
                 to_return["trades"].append(new_trade.to_dict())
             else:
-                old_trade = Trade.query.filter_by(id=existing_trade.trade_id).first()
+                old_trade = Signal.query.filter_by(id=existing_trade.trade_id).first()
                 to_return["trades"].append(old_trade.to_dict())
 
         # Remove from trade to prop firm association table the trades
         # that don't exist in positions for the current prop firm
-        trades_to_delete = PropFirmTrades.query.filter(
-            PropFirmTrades.prop_firm_id == prop_firm.id,
-            PropFirmTrades.platform_id.notin_(
+        trades_to_delete = Trade.query.filter(
+            Trade.prop_firm_id == prop_firm.id,
+            Trade.platform_id.notin_(
                 [str(position.ticket) for position in positions]
             ),
         ).all()
