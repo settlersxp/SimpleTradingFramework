@@ -9,6 +9,7 @@ from app.models.prop_firm_trade_pair_association import (
 from app.models.user import User
 from app.routes.auth import login_required
 from app.models.user import user_prop_firm
+from sqlalchemy import select
 
 bp = Blueprint("prop_firms", __name__)
 
@@ -139,8 +140,18 @@ def update_prop_firm(prop_firm_id):
     try:
         data = request.get_json()
         prop_firm = db.session.get(PropFirm, prop_firm_id)
+        user = User.get_user_by_token(
+            request.headers.get("X-Session-ID"), request.headers.get("X-User-ID")
+        )
         if not prop_firm:
             return jsonify({"error": "Prop firm not found"}), 404
+
+        if "is_active" in data:
+            if data["is_active"]:
+                prop_firm.add_user(user)
+            else:
+                prop_firm.remove_user(user)
+
         if "name" in data:
             prop_firm.name = data["name"]
         if "full_balance" in data:
@@ -149,8 +160,6 @@ def update_prop_firm(prop_firm_id):
             prop_firm.available_balance = float(data["available_balance"])
         if "drawdown_percentage" in data:
             prop_firm.drawdown_percentage = float(data["drawdown_percentage"])
-        if "is_active" in data:
-            prop_firm.is_active = data["is_active"]
         if "username" in data:
             prop_firm.username = data["username"]
         if "password" in data:
@@ -167,11 +176,21 @@ def update_prop_firm(prop_firm_id):
                 float(data["full_balance"])
             )
         db.session.commit()
+
+        stmt = select(user_prop_firm).where(
+            user_prop_firm.c.user_id == user.id,
+            user_prop_firm.c.prop_firm_id == prop_firm.id,
+        )
+        is_associated = db.session.execute(stmt).first() is not None
+
+        response_data = prop_firm.to_dict()
+        response_data["is_active"] = is_associated
+
         return jsonify(
             {
                 "status": "success",
                 "message": "Prop firm updated successfully",
-                "prop_firm": prop_firm.to_dict(),
+                "prop_firm": response_data,
             }
         )
     except Exception as e:
