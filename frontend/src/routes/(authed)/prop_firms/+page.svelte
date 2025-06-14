@@ -29,20 +29,6 @@
                             </p>
                         </a>
 
-                        <!-- Manage Active Prop Firms Link -->
-                        <a
-                            href="/prop_firms/manage"
-                            class="relative block p-6 border border-gray-300 rounded-lg hover:border-gray-400 bg-white shadow-sm hover:shadow-md transition-all"
-                        >
-                            <h3 class="text-lg font-medium text-indigo-600">
-                                Manage Active Prop Firms
-                            </h3>
-                            <p class="mt-2 text-sm text-gray-500">
-                                Select which prop firms are active for your
-                                account.
-                            </p>
-                        </a>
-
                         <!-- View All Prop Firms Link -->
                         <a
                             href="/prop_firms/overview"
