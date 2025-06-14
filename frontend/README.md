@@ -36,3 +36,9 @@ npm run build
 You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+
+
+## Signal example:
+```
+'"strategy":"strategy_name", "order":"buy|sell", "contracts":"0.01", "ticker":"ETHUSDT.P", "position_size":"0.01"'
+```

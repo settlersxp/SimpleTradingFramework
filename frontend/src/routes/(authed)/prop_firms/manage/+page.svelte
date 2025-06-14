@@ -144,15 +144,19 @@
                                                         : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                                                 } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                                             >
-                                                {#if isLoading && isActive(propFirm)}
-                                                    Removing...
-                                                {:else if isLoading && !isActive(propFirm)}
-                                                    Adding...
-                                                {:else if isActive(propFirm)}
+                                                {#if isActive(propFirm)}
                                                     Active
                                                 {:else}
                                                     Inactive
                                                 {/if}
+                                            </button>
+                                            <button
+                                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
+                                                onclick={() =>
+                                                    (window.location.href = `/prop_firms/${propFirm.id}`)}
+                                                disabled={isLoading}
+                                            >
+                                                Manage
                                             </button>
                                         </div>
                                     </div>

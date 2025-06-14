@@ -16,16 +16,16 @@ bp = Blueprint("trades", __name__)
 
 
 @bp.route("/<int:trade_id>", methods=["GET"])
-def get_trade(trade_id):
+def get_trade(signal_id):
     """Retrieve a specific trade by its ID.
 
     Args:
-        trade_id (int): The ID of the trade to retrieve.
+        signal_id (int): The ID of the signal to retrieve.
 
     Returns:
         JSON response containing the trade data or an error message if not found.
     """
-    trade = db.session.get(Trade, trade_id)
+    trade = db.session.get(Trade, signal_id)
     if not trade:
         return jsonify({"error": "Trade not found"}), 404
     return jsonify(trade.to_dict())

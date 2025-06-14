@@ -8,6 +8,11 @@
     let loading = $state(true);
     let error = $state<string | null>(null);
 
+    // Remove a signal locally once it has been deleted on the server
+    function removeSignal(id: number) {
+        signals = signals.filter((s) => s.id !== id);
+    }
+
     onMount(() => {
         const fetchData = async () => {
             try {
@@ -69,6 +74,11 @@
                             <tr>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                >
+                                    Actions
+                                </th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                     >ID</th
                                 >
                                 <th
@@ -99,7 +109,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             {#each signals as signal}
-                                <SignalRow {signal} />
+                                <SignalRow {signal} onDelete={removeSignal} />
                             {:else}
                                 <tr>
                                     <td
