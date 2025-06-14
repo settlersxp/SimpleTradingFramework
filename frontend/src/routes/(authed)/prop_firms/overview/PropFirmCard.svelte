@@ -10,6 +10,7 @@
         syncing: boolean;
         onSync: (firmId: number) => void;
         onToggleActive: (firmId: number, status: boolean) => void;
+        onDelete: (pairId: number) => void;
     }>();
 </script>
 
@@ -21,6 +22,10 @@
         onToggleActive={props.onToggleActive}
     />
     <AccountInformation firm={props.firm} />
-    <TradePairs trade_pairs={props.firm.tradePairs} />
+    <TradePairs
+        trade_pairs={props.firm.tradePairs}
+        prop_firm_id={props.firm.id}
+        onDelete={props.onDelete}
+    />
     <RecentTrades trades={props.firm.trades} />
 </div>

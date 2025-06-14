@@ -7,6 +7,7 @@
     let firms = $state<PropFirm[]>([...props.data.propFirms]);
     let syncing = $state(false);
     let syncError = $state<string | null>(null);
+    let deleteTradePair = $state<string | null>(null);
 
     async function syncPropFirm(firmId: number) {
         syncing = true;
@@ -144,6 +145,7 @@
                     {syncing}
                     onSync={syncPropFirm}
                     onToggleActive={toggleActive}
+                    onDelete={deleteTradePair}
                 />
             {/each}
         </div>

@@ -1,7 +1,11 @@
 <script lang="ts">
     import type { TradePairInfo } from "$lib/types/PropFirms";
 
-    const props = $props<{ trade_pairs: TradePairInfo[] | any[] }>();
+    const props = $props<{
+        trade_pairs: TradePairInfo[] | any[];
+        prop_firm_id: number;
+        onDelete: (pairId: number) => void;
+    }>();
 
     // Helper function to check if there are any associated pairs
     function hasAssociatedPairs(pairs: any[]): boolean {
@@ -9,6 +13,23 @@
             Array.isArray(pairs) &&
             pairs.some((pair: any) => pair.is_associated)
         );
+    }
+
+    async function deleteTradePair(pairId: number) {
+        const response = await fetch(
+            `/python/prop_firms/${props.prop_firm_id}/trade_pairs/${pairId}`,
+            {
+                method: "DELETE",
+            },
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to delete trade pair", {
+                cause: response.body,
+            });
+        }
+
+        props.onDelete(pairId);
     }
 
     const hasAssociated = hasAssociatedPairs(props.trade_pairs);
@@ -30,6 +51,12 @@
                             Label: {pair.current_label}
                         </p>
                     {/if}
+                    <button
+                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs"
+                        onclick={() => deleteTradePair(pair.id)}
+                    >
+                        X
+                    </button>
                 </div>
             {/each}
         {:else}

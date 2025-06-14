@@ -247,6 +247,24 @@ def manage_trade_pairs(prop_firm_id):
 
 
 @login_required
+@bp.route("/<int:prop_firm_id>/trade_pairs/<int:trade_pair_id>", methods=["DELETE"])
+def delete_trade_pair(prop_firm_id, trade_pair_id):
+    # Get the row with the given trade pair id and prop firm id
+    trade_pair = PropFirmTradePairAssociation.query.filter_by(
+        trade_pair_id=trade_pair_id, prop_firm_id=prop_firm_id
+    ).first()
+    if not trade_pair:
+        return jsonify({"error": "Trade pair not found"}), 404
+    try:
+        db.session.delete(trade_pair)
+        db.session.commit()
+        return jsonify({"message": "Trade pair deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@login_required
 @bp.route("/sync", methods=["POST"])
 def sync_prop_firms():
     try:

@@ -93,6 +93,12 @@
             <p class="text-gray-600">
                 Select the trade pairs this prop firm can use and assign labels.
             </p>
+            <button
+                onclick={() => (window.location.href = "/prop_firms/overview")}
+                class="bg-blue-500 text-white px-4 py-2 rounded"
+            >
+                Back to Prop Firms
+            </button>
         </div>
 
         <div class="space-y-4">
