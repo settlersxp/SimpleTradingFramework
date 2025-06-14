@@ -4,37 +4,30 @@
         {
             name: "Prop Firms",
             path: "/prop_firms/",
-            endpoint: "prop_firms.view_prop_firms",
         },
         {
             name: "Trades",
             path: "/trades/view",
-            endpoint: "trades.view_trades",
         },
         {
             name: "Trade Pairs",
             path: "/trade_pairs",
-            endpoint: "trade_pairs.index",
         },
         {
-            name: "Opened trades",
-            path: "/trades/list",
-            endpoint: "trades.list_trades",
+            name: "Saved signals",
+            path: "/signals/list",
         },
         {
             name: "Trading Strategies",
             path: "/trading_strategies",
-            endpoint: "trading_strategies.index",
         },
         {
             name: "My Strategies",
             path: "/trading_strategies/my",
-            endpoint: "trading_strategies.my",
         },
         {
             name: "Profiles",
             path: "/profiles",
-            endpoint: "profiles.index",
         },
     ];
 

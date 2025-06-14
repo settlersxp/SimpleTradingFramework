@@ -25,7 +25,7 @@ def get_trade(trade_id):
     Returns:
         JSON response containing the trade data or an error message if not found.
     """
-    trade = db.session.get(Signal, trade_id)
+    trade = db.session.get(Trade, trade_id)
     if not trade:
         return jsonify({"error": "Trade not found"}), 404
     return jsonify(trade.to_dict())
@@ -42,7 +42,7 @@ def handle_trades():
         JSON response containing the list of trades or the status of the trade creation.
     """
     if request.method == "GET":
-        trades = db.session.query(Signal).order_by(Signal.id.desc()).all()
+        trades = db.session.query(Trade).order_by(Trade.signal_id.desc()).all()
         return jsonify({"trades": [trade.to_dict() for trade in trades]})
     elif request.method == "POST":
         mt_string = request.get_data(as_text=True)
@@ -57,7 +57,9 @@ def handle_trade_with_parameters(mt_string):
     """
     try:
         trades = add_trade_associations(mt_string)
-        return jsonify({"status": "success", "trades": [trade.id for trade in trades]})
+        return jsonify(
+            {"status": "success", "trades": [trade.signal_id for trade in trades]}
+        )
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
@@ -70,11 +72,10 @@ def view_trades():
         JSON response containing trades with their associated prop firms.
     """
     trades_with_firms = (
-        db.session.query(Signal, PropFirm)
-        .select_from(Signal)
-        .join(Trade, Signal.id == Trade.signal_id)
+        db.session.query(Trade, PropFirm)
+        .select_from(Trade)
         .join(PropFirm, PropFirm.id == Trade.prop_firm_id)
-        .order_by(Signal.id.desc())
+        .order_by(Trade.signal_id.desc())
         .all()
     )
 
@@ -129,7 +130,7 @@ def delete_trade(trade_id):
         JSON response indicating the status of the deletion operation.
     """
     try:
-        trade = Signal.query.get_or_404(trade_id)
+        trade = Trade.query.get_or_404(trade_id)
         db.session.delete(trade)
         db.session.commit()
         return jsonify({"message": "Trade deleted successfully"}), 200
@@ -149,7 +150,7 @@ def replay_trade(trade_id):
         JSON response indicating the status of the replay operation.
     """
     try:
-        trade = Signal.query.get_or_404(trade_id)
+        trade = Trade.query.get_or_404(trade_id)
 
         # Convert trade to MT string format
         mt_string = (
@@ -167,7 +168,7 @@ def replay_trade(trade_id):
             {
                 "status": "success",
                 "message": "Trade replayed successfully",
-                "trades": [trade.id for trade in trades],
+                "trades": [trade.signal_id for trade in trades],
             }
         )
     except Exception as e:
@@ -186,7 +187,7 @@ def close_trade():
     if not association:
         return jsonify({"status": "error", "message": "Association not found"}), 404
 
-    trade = Signal.query.get_or_404(trade_id)
+    trade = Trade.query.get_or_404(trade_id)
     if not trade:
         return jsonify({"status": "error", "message": "Trade not found"}), 404
 
@@ -209,7 +210,7 @@ def close_all_trades():
     """
     try:
         trade_id = request.args.get("trade_id")
-        trade = Signal.query.get_or_404(trade_id)
+        trade = Trade.query.get_or_404(trade_id)
 
         trades = close_all_trade_associations(trade)
 
@@ -218,7 +219,7 @@ def close_all_trades():
                 {
                     "status": "success",
                     "message": "Trade closed successfully",
-                    "trades": [trade.id for trade in trades],
+                    "trades": [trade.signal_id for trade in trades],
                 }
             ),
             200,

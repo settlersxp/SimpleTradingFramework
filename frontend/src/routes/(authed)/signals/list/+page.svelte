@@ -1,25 +1,25 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import type { TradeWithFirm } from "$lib/types/TradeWithFirm";
-    import TradeRow from "./TradeRow.svelte";
+    import type { Signal } from "$lib/types/Signals";
+    import SignalRow from "./Signal.svelte";
 
-    let tradesWithFirms = $state<TradeWithFirm[]>([]);
+    let signals = $state<Signal[]>([]);
     let loading = $state(true);
     let error = $state<string | null>(null);
 
     onMount(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch("/api/trades/list");
+                const response = await fetch("/api/signals/list");
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                tradesWithFirms = data.trades_with_firms;
+                signals = data.signals;
             } catch (e) {
                 error = e instanceof Error ? e.message : "An error occurred";
-                console.error("Error fetching trades with firms:", e);
+                console.error("Error fetching signals:", e);
             } finally {
                 loading = false;
             }
@@ -41,7 +41,7 @@
             <div
                 class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center"
             >
-                <h2 class="text-xl font-semibold text-gray-800">Trades</h2>
+                <h2 class="text-xl font-semibold text-gray-800">Signals</h2>
                 <a
                     href="/prop_firms/overview"
                     class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
@@ -95,21 +95,17 @@
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                     >Created At</th
                                 >
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                    >Prop Firm</th
-                                >
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            {#each tradesWithFirms as trade}
-                                <TradeRow {trade} />
+                            {#each signals as signal}
+                                <SignalRow {signal} />
                             {:else}
                                 <tr>
                                     <td
                                         colspan="8"
                                         class="px-6 py-4 text-center text-sm text-gray-500"
-                                        >No trades found</td
+                                        >No signals found</td
                                     >
                                 </tr>
                             {/each}

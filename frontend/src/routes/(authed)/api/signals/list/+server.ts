@@ -1,4 +1,4 @@
-// Router for the trades endpoint
+// Router for the signals endpoint
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '../$types';
 
@@ -6,7 +6,7 @@ import type { RequestHandler } from '../$types';
 export const GET: RequestHandler = async ({ fetch }: { fetch: any }) => {
     try {
 
-        const response = await fetch(`/python/trades/view`);
+        const response = await fetch(`/python/signals/list`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -25,7 +25,7 @@ export const POST: RequestHandler = async ({ request, fetch }: { request: any, f
     try {
         const mtString = await request.text();
 
-        const response = await fetch(`/python/trades`, {
+        const response = await fetch(`/python/signals`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain'

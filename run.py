@@ -1,7 +1,7 @@
 from app import create_app, db
 from config import DevelopmentConfig
-from flask import jsonify, redirect, url_for, request, g, render_template
-from flask_migrate import Migrate, upgrade
+from flask import jsonify, request, g, render_template
+from flask_migrate import Migrate
 from app.models.prop_firm import PropFirm
 import os
 import signal
@@ -167,16 +167,22 @@ class FlaskApp:
         @self.app.route("/open_positions", methods=["POST"], strict_slashes=False)
         def open_positions():
             from app.routes.trades import handle_trade_with_parameters
+            from app.routes.signals import save_signal
+            save_signal(request.get_data(as_text=True))
             return handle_trade_with_parameters(request.get_data(as_text=True))
 
         @self.app.route("/trades", methods=["POST"], strict_slashes=False)
         def trades():
             from app.routes.trades import handle_trade_with_parameters
+            from app.routes.signals import save_signal
+            save_signal(request.get_data(as_text=True))
             return handle_trade_with_parameters(request.get_data(as_text=True))
 
         @self.app.route("/receiveMessage", methods=["POST"], strict_slashes=False)
         def receive_message():
             from app.routes.trades import handle_trade_with_parameters
+            from app.routes.signals import save_signal
+            save_signal(request.get_data(as_text=True))
             return handle_trade_with_parameters(request.get_data(as_text=True))
 
         @self.app.route("/health", methods=["GET"])

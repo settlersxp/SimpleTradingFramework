@@ -66,10 +66,7 @@ def close_all_trade_associations(trade):
         return []
 
     prop_firms = (
-        db.session.query(PropFirm)
-        .join(Trade)
-        .filter_by(signal_id=old_trade.id)
-        .all()
+        db.session.query(PropFirm).join(Trade).filter_by(signal_id=old_trade.id).all()
     )
 
     for prop_firm in prop_firms:
@@ -89,7 +86,8 @@ def close_all_trade_associations(trade):
     return trades
 
 
-def add_trade_associations(mt_string, create_trade=True):
+@staticmethod
+def add_trade_associations(mt_string):
     """Add trade associations based on the provided MT string.
 
     Args:
@@ -101,10 +99,6 @@ def add_trade_associations(mt_string, create_trade=True):
     """
     trades = []
     trade = Signal.from_mt_string(mt_string)
-
-    if create_trade:
-        db.session.add(trade)
-        db.session.commit()
 
     # Now we can directly use prop_firm as it has the association
     if trade.position_size == 0:
