@@ -9,7 +9,7 @@
         firm: PropFirm;
         syncing: boolean;
         onSync: (firmId: number) => void;
-        onToggleActive: (firmId: number, status: boolean) => void;
+        onToggleStatus: (firmId: number, status: boolean) => void;
         onDelete: (firmId: number, pairId: number) => void;
     }>();
 </script>
@@ -19,7 +19,7 @@
         firm={props.firm}
         syncing={props.syncing}
         onSync={props.onSync}
-        onToggleActive={props.onToggleActive}
+        onToggleStatus={props.onToggleStatus}
     />
     <AccountInformation firm={props.firm} />
     <TradePairs

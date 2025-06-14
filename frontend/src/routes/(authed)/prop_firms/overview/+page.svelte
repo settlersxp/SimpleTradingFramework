@@ -26,7 +26,7 @@
 
             // Parse the response to get the updated firm data
             const result = await response.json();
-            updateFirmInList(result);
+            updateFirmInList(result, firmId);
         } catch (error) {
             console.error("Error syncing prop firm:", error);
             syncError =
@@ -36,25 +36,27 @@
         }
     }
 
-    async function toggleActive(firmId: number, status: boolean) {
+    async function toggleStatus(firmId: number, status: boolean) {
         try {
-            const response = await fetch(
-                `/api/prop_firms/${firmId}/toggle_active`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ status: status }),
+            const response = await fetch(`/api/prop_firms/manage`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-            );
+                body: JSON.stringify({
+                    action: status ? "add" : "remove",
+                    propFirmId: firmId,
+                }),
+            });
 
             if (!response.ok) {
                 throw new Error("Failed to toggle active");
             }
 
-            const result = await response.json();
-            updateFirmInList(result);
+            // Update only the field is_active of the firm
+            firms = firms.map((firm: PropFirm) =>
+                firm.id === firmId ? { ...firm, is_active: status } : firm,
+            );
         } catch (error) {
             console.error("Error toggling active:", error);
             syncError =
@@ -63,18 +65,17 @@
     }
 
     // Function to update a firm in the list without reloading the page
-    function updateFirmInList(result: any) {
-        if (result && result.prop_firm) {
-            const updatedFirm = result.prop_firm;
-
-            // Create a new array with the updated firm
+    function updateFirmInList(result: any, firmId: number) {
+        // Determine where the updated firm object is located in the response
+        const updatedFirm: PropFirm | undefined = result?.prop_firm ?? result;
+        console.log(updatedFirm);
+        if (updatedFirm && typeof updatedFirm.id === "number") {
+            // Replace only the matching firm in the array
             firms = firms.map((firm: PropFirm) =>
-                firm.id === updatedFirm.id ? updatedFirm : firm,
+                firm.id === firmId ? updatedFirm : firm,
             );
-        } else {
-            // For now, we'll just reload to show the changes
-            window.location.reload();
         }
+        // If the updated firm wasn't found, we silently ignore; no full reload.
     }
 
     async function syncAllPropFirms() {
@@ -160,7 +161,7 @@
                     {firm}
                     {syncing}
                     onSync={syncPropFirm}
-                    onToggleActive={toggleActive}
+                    onToggleStatus={toggleStatus}
                     onDelete={handleDeleteTradePair}
                 />
             {/each}
