@@ -7,7 +7,6 @@
     let firms = $state<PropFirm[]>([...props.data.propFirms]);
     let syncing = $state(false);
     let syncError = $state<string | null>(null);
-    let deleteTradePair = $state<string | null>(null);
 
     async function syncPropFirm(firmId: number) {
         syncing = true;
@@ -104,6 +103,23 @@
             syncing = false;
         }
     }
+
+    async function handleDeleteTradePair(firmId: number, pairId: number) {
+        // Update only the targeted firm's tradePairs array, removing the deleted pair
+        firms = firms.map((firm: PropFirm) => {
+            if (firm.id === firmId) {
+                return {
+                    ...firm,
+                    tradePairs: Array.isArray(firm.tradePairs)
+                        ? firm.tradePairs.filter(
+                              (pair: any) => pair.id !== pairId,
+                          )
+                        : firm.tradePairs,
+                };
+            }
+            return firm;
+        });
+    }
 </script>
 
 <svelte:head>
@@ -145,7 +161,7 @@
                     {syncing}
                     onSync={syncPropFirm}
                     onToggleActive={toggleActive}
-                    onDelete={deleteTradePair}
+                    onDelete={handleDeleteTradePair}
                 />
             {/each}
         </div>

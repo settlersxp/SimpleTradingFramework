@@ -4,7 +4,7 @@
     const props = $props<{
         trade_pairs: TradePairInfo[] | any[];
         prop_firm_id: number;
-        onDelete: (pairId: number) => void;
+        onDelete: (firmId: number, pairId: number) => void;
     }>();
 
     // Helper function to check if there are any associated pairs
@@ -29,7 +29,7 @@
             });
         }
 
-        props.onDelete(pairId);
+        props.onDelete(props.prop_firm_id, pairId);
     }
 
     const hasAssociated = hasAssociatedPairs(props.trade_pairs);

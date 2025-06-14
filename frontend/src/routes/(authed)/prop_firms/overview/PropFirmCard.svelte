@@ -10,7 +10,7 @@
         syncing: boolean;
         onSync: (firmId: number) => void;
         onToggleActive: (firmId: number, status: boolean) => void;
-        onDelete: (pairId: number) => void;
+        onDelete: (firmId: number, pairId: number) => void;
     }>();
 </script>
 
