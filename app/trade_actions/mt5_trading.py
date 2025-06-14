@@ -1,5 +1,5 @@
 import MetaTrader5 as mt5
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 from .trade_interface import TradingInterface
 import logging
 from datetime import datetime
@@ -43,9 +43,11 @@ class MT5Trading(TradingInterface):
         if account_info:
             same_user = int(account_info.login) == int(credentials.get("username"))
             if same_user:
+                self.connected = True
                 return True
             else:
                 mt5.shutdown()
+                self.connected = False
 
         try:
             # Initialize MT5
@@ -359,17 +361,14 @@ class MT5Trading(TradingInterface):
         account_info = mt5.account_info()
         return account_info is not None
 
-    def sync_prop_firm(self, prop_firm: "PropFirm") -> Dict[str, Any]:
+    def sync_prop_firm(
+        self, prop_firm: "PropFirm"
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """
         Synchronize prop firm information with MT5.
         Updates account information and creates new trades.
         """
-        to_return = {
-            "full_balance": 0,
-            "available_balance": 0,
-            "drawdown_percentage": 0,
-            "trades": [],
-        }
+        to_return = {}
 
         self.connect(self.credentials)
 
@@ -378,22 +377,19 @@ class MT5Trading(TradingInterface):
         if not account_info:
             raise Exception("Failed to get account information for %s" % prop_firm.name)
 
-        # Update prop firm information
-        to_return["full_balance"] = account_info.balance
-        to_return["available_balance"] = account_info.margin_free
-
+        to_return = dict(account_info._asdict())
         # Calculate drawdown percentage
         if account_info.balance > 0:
-            drawdown = (
+            to_return["drawdown_percentage"] = (
                 (account_info.balance - account_info.equity) / account_info.balance
             ) * 100
-            to_return["drawdown_percentage"] = max(0, drawdown)
 
         # Get open positions
         positions = mt5.positions_get()
         if not positions:
             return to_return
 
+        to_return["trades"] = []
         for position in positions:
             # Check if trade already exists
             existing_trade = Trade.query.filter_by(
@@ -402,33 +398,40 @@ class MT5Trading(TradingInterface):
             ).first()
 
             if not existing_trade:
-                new_trade = Signal(
+                new_signal = Signal(
                     strategy="MT5_SYNC",
-                    order_type=position.type,
+                    order_type="buy" if position.type == mt5.ORDER_TYPE_BUY else "sell",
                     contracts=position.volume,
                     ticker=position.symbol,
                     position_size=abs(position.profit + position.swap),
                 )
-                new_trade = Signal.create_new_trade(new_trade)
+                new_signal = Signal.create_new_signal(new_signal)
 
-                Trade.associate_trade(
-                    new_trade,
+                existing_trade = Trade.associate_signal(
+                    new_signal,
                     prop_firm,
                     str(position.ticket),
                     list(position),
                 )
-                to_return["trades"].append(new_trade.to_dict())
-            else:
-                old_trade = Signal.query.filter_by(id=existing_trade.trade_id).first()
-                to_return["trades"].append(old_trade.to_dict())
+
+            # join with the signal table to get the strategy name
+            new_signal = Signal.query.filter_by(id=existing_trade.signal_id).first()
+            output_trade = existing_trade.to_dict()
+            output_trade["strategy"] = new_signal.strategy
+            output_trade["order_type"] = (
+                "buy" if new_signal.order_type == "0" else "sell"
+            )
+            output_trade["contracts"] = new_signal.contracts
+            output_trade["ticker"] = new_signal.ticker
+            output_trade["position_size"] = new_signal.position_size
+
+            to_return["trades"].append(output_trade)
 
         # Remove from trade to prop firm association table the trades
         # that don't exist in positions for the current prop firm
         trades_to_delete = Trade.query.filter(
             Trade.prop_firm_id == prop_firm.id,
-            Trade.platform_id.notin_(
-                [str(position.ticket) for position in positions]
-            ),
+            Trade.platform_id.notin_([str(position.ticket) for position in positions]),
         ).all()
         for trade in trades_to_delete:
             db.session.delete(trade)

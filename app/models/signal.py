@@ -55,13 +55,13 @@ class Signal(TimezoneAwareModel):
         return json.dumps(self.to_dict())
 
     @staticmethod
-    def create_new_trade(new_trade):
+    def create_new_signal(new_signal):
         """
-        Create a new trade
+        Create a new signal
         """
-        db.session.add(new_trade)
+        db.session.add(new_signal)
         db.session.commit()
-        return new_trade
+        return new_signal
 
     @staticmethod
     def from_mt_string(mt_string: str):

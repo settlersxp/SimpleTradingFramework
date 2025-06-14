@@ -31,32 +31,27 @@ def get_trade(signal_id):
     return jsonify(trade.to_dict())
 
 
-@bp.route("/", methods=["GET", "POST"], strict_slashes=False)
+@bp.route("/", methods=["GET"], strict_slashes=False)
 def handle_trades():
-    """Handle GET and POST requests for trades.
+    """Handle GET requests for trades.
 
     GET: Retrieve all trades, ordered by ID in descending order.
-    POST: Create a new trade association from the request data.
 
     Returns:
         JSON response containing the list of trades or the status of the trade creation.
     """
-    if request.method == "GET":
-        trades = db.session.query(Trade).order_by(Trade.signal_id.desc()).all()
-        return jsonify({"trades": [trade.to_dict() for trade in trades]})
-    elif request.method == "POST":
-        mt_string = request.get_data(as_text=True)
-        return handle_trade_with_parameters(mt_string)
+    trades = db.session.query(Trade).order_by(Trade.signal_id.desc()).all()
+    return jsonify({"trades": [trade.to_dict() for trade in trades]})
 
 
-def handle_trade_with_parameters(mt_string):
+def handle_trade_with_parameters(saved_signal):
     """Handle a trade with parameters.
 
     Args:
         mt_string (str): The MT string to add the trade.
     """
     try:
-        trades = add_trade_associations(mt_string)
+        trades = add_trade_associations(saved_signal)
         return jsonify(
             {"status": "success", "trades": [trade.signal_id for trade in trades]}
         )

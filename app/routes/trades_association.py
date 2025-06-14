@@ -87,23 +87,21 @@ def close_all_trade_associations(trade):
 
 
 @staticmethod
-def add_trade_associations(mt_string):
+def add_trade_associations(saved_signal: Signal):
     """Add trade associations based on the provided MT string.
 
     Args:
-        mt_string (str): The MT string containing trade information.
-        create_trade (bool): Flag indicating whether to create a new trade.
+        saved_signal (Signal): The signal to add trade associations for.
 
     Returns:
         [Trade]: One trade for each prop firm of each user.
     """
     trades = []
-    trade = Signal.from_mt_string(mt_string)
 
     # Now we can directly use prop_firm as it has the association
-    if trade.position_size == 0:
+    if saved_signal.position_size == 0:
         # get the prop firms with this trade
-        trades = close_all_trade_associations(trade)
+        trades = close_all_trade_associations(saved_signal)
         return trades
 
     # for every user in the database, get only the active prop firms
@@ -113,11 +111,11 @@ def add_trade_associations(mt_string):
         for prop_firm in prop_firms:
             # Check if the trade's ticker exists in trade_pairs
             trade_pair = (
-                db.session.query(TradePairs).filter_by(name=trade.ticker).first()
+                db.session.query(TradePairs).filter_by(name=saved_signal.ticker).first()
             )
 
             if not trade_pair:
-                print(f"Ticker {trade.ticker} not tracked by {prop_firm.name}")
+                print(f"Ticker {saved_signal.ticker} not tracked by {prop_firm.name}")
                 # If ticker is not tracked, skip prop firm associations
                 continue
 
@@ -130,29 +128,29 @@ def add_trade_associations(mt_string):
 
             if not association:
                 print(
-                    f"Trade pair not associated with {trade.ticker} and {prop_firm.name}"
+                    f"Trade pair not associated with {saved_signal.ticker} and {prop_firm.name}"
                 )
                 continue
 
             print(f"Current prop firm {prop_firm.name}")
             # If association exists, use the label when placing the trade
-            outcome = prop_firm.trading.place_trade(trade, label=association.label)
+            outcome = prop_firm.trading.place_trade(saved_signal, label=association.label)
             if not outcome.success:
-                print(f"Error placing trade {trade.id}: {outcome.message}")
+                print(f"Error placing trade: {outcome.message}")
                 continue
 
             # Add trade to prop firm with platform ID
             prop_firm_trade = Trade(
                 prop_firm_id=prop_firm.id,
-                signal_id=trade.id,
+                signal_id=saved_signal.id,
                 platform_id=outcome.details["request_id"],
                 response=json.dumps(outcome.details["response"]),
             )
             db.session.add(prop_firm_trade)
 
-            prop_firm.update_available_balance(trade)
+            prop_firm.update_available_balance(saved_signal)
             print(f"Trade {outcome.details['request_id']} placed successfully")
-            trades.append(trade)
+            trades.append(prop_firm_trade)
 
             db.session.commit()
     return trades

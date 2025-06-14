@@ -22,6 +22,8 @@
                 }
                 const data = await response.json();
                 signals = data.signals;
+                // Reset any previous error state on successful fetch
+                error = null;
             } catch (e) {
                 error = e instanceof Error ? e.message : "An error occurred";
                 console.error("Error fetching signals:", e);

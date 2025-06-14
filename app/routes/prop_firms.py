@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, g
+from flask import Blueprint, jsonify, request
 from app.models.prop_firm import PropFirm
 from app import db
 from app.models.trade_pairs import TradePairs
@@ -58,6 +58,10 @@ def get_prop_firms():
     user = User.get_user_by_token(
         request.headers.get("X-Session-ID"), request.headers.get("X-User-ID")
     )
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
     all_prop_firms = PropFirm.query.all()
     trade_associations = db.session.query(
         Trade.prop_firm_id,
@@ -121,17 +125,29 @@ def trades_for_prop_firm(prop_firm_id):
     prop_firm = db.session.get(PropFirm, prop_firm_id)
     if not prop_firm:
         return jsonify({"error": "Prop firm not found"}), 404
+    # Join trades with their corresponding signals so the frontend gets
+    # all the information it needs (strategy, order_type, ticker …).
     assoc_q = db.session.query(Trade).filter_by(prop_firm_id=prop_firm_id)
+
     trades_data = []
     for assoc in assoc_q.all():
-        trade = assoc.trade
-        if not trade:
+        # Each Trade row is linked to a Signal through the foreign-key relationship
+        sig = assoc.signal  # SQLAlchemy relationship – may trigger lazy load
+        if not sig:
+            # In rare cases the signal might be missing; skip such rows
             continue
-        trade_data = trade.to_dict()
-        trade_data["platform_id"] = assoc.platform_id
-        trade_data["response"] = assoc.response
+
+        # Combine Trade-level and Signal-level data in a single dict
+        trade_data = {
+            **sig.to_dict(),  # id, strategy, order_type, ticker …
+            **assoc.to_dict(),  # platform_id, response, created_at …
+        }
+
         trades_data.append(trade_data)
-    return jsonify({"prop_firm": prop_firm.to_dict(), "trades": trades_data})
+
+    output_data = prop_firm.to_dict()
+    output_data["trades"] = trades_data
+    return jsonify(output_data)
 
 
 @login_required
@@ -269,16 +285,22 @@ def delete_trade_pair(prop_firm_id, trade_pair_id):
 def sync_prop_firms():
     try:
         prop_firm_id_req = request.json.get("prop_firm_id") if request.json else None
+        results = {}
         if prop_firm_id_req:
             pf_sync = PropFirm.query.get(prop_firm_id_req)
             if not pf_sync:
                 return jsonify({"error": "Prop firm not found"}), 404
-            result = pf_sync.trading.sync_prop_firm(pf_sync)
+            results = pf_sync.trading.sync_prop_firm(pf_sync)
             msg = "Prop firm synced successfully"
-            return jsonify({"prop_firm": result, "success": True, "message": msg})
+            return jsonify(
+                {
+                    "prop_firm": results,
+                    "success": True,
+                    "message": msg,
+                }
+            )
         else:
             firms_to_sync = PropFirm.query.filter_by(is_active=True).all()
-            results = {}
             for pf in firms_to_sync:
                 results[pf.id] = pf.trading.sync_prop_firm(pf)
             s_count = sum(1 for r in results.values() if r)

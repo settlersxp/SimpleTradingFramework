@@ -168,22 +168,31 @@ class FlaskApp:
         def open_positions():
             from app.routes.trades import handle_trade_with_parameters
             from app.routes.signals import save_signal
-            save_signal(request.get_data(as_text=True))
-            return handle_trade_with_parameters(request.get_data(as_text=True))
+            saved_signal = save_signal(request.get_data(as_text=True))
+            return handle_trade_with_parameters(
+                request.get_data(as_text=True),
+                saved_signal,
+            )
 
         @self.app.route("/trades", methods=["POST"], strict_slashes=False)
         def trades():
             from app.routes.trades import handle_trade_with_parameters
             from app.routes.signals import save_signal
-            save_signal(request.get_data(as_text=True))
-            return handle_trade_with_parameters(request.get_data(as_text=True))
+            saved_signal = save_signal(request.get_data(as_text=True))
+            return handle_trade_with_parameters(
+                request.get_data(as_text=True),
+                saved_signal,
+            )
 
         @self.app.route("/receiveMessage", methods=["POST"], strict_slashes=False)
         def receive_message():
             from app.routes.trades import handle_trade_with_parameters
             from app.routes.signals import save_signal
-            save_signal(request.get_data(as_text=True))
-            return handle_trade_with_parameters(request.get_data(as_text=True))
+            saved_signal = save_signal(request.get_data(as_text=True))
+            return handle_trade_with_parameters(
+                request.get_data(as_text=True),
+                saved_signal,
+            )
 
         @self.app.route("/health", methods=["GET"])
         def health():

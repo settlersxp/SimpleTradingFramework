@@ -35,6 +35,11 @@ class Trade(db.Model):
         back_populates="prop_firm_associations",
     )
 
+    created_at = db.Column(
+        db.DateTime,
+        default=db.func.now(),
+    )
+
     def __init__(
         self,
         prop_firm_id,
@@ -103,4 +108,5 @@ class Trade(db.Model):
             "signal_id": self.signal_id,
             "platform_id": self.platform_id,
             "response": self.response,
+            "created_at": self.created_at,
         }

@@ -11,8 +11,10 @@ export const load: PageLoad = async ({ fetch }) => {
     // For each prop firm, fetch their trades
     const propFirmsWithTrades = await Promise.all(
         propFirms.map(async (firm: any) => {
-            const tradesResponse = await fetch(`/api/prop_firms/${firm.id}?resource=trades`);
-            const trades = tradesResponse.ok ? await tradesResponse.json() : [];
+            // Fetch trades for the current prop firm
+            const tradesResponse = await fetch(`/api/prop_firms/${firm.id}/trades`);
+            const tradesJson = tradesResponse.ok ? await tradesResponse.json() : { trades: [] };
+            const trades = Array.isArray(tradesJson.trades) ? tradesJson.trades : [];
 
             // Fetch trade pairs for each firm
             const tradePairsResponse = await fetch(`/api/prop_firms/${firm.id}/trade_pairs`);
@@ -20,7 +22,7 @@ export const load: PageLoad = async ({ fetch }) => {
 
             return {
                 ...firm,
-                trades: trades.handle_trades,
+                trades,
                 tradePairs: tradePairs.trade_pairs
             };
         })

@@ -20,15 +20,16 @@
 
     async function closeTrade(trade: Trade) {
         try {
-            const response = await fetch(`/api/trades/close?trade_id=${trade.id}`, {
-                method: "GET",
-            });
+            const response = await fetch(
+                `/api/trades/close?trade_id=${trade.id}`,
+                {
+                    method: "GET",
+                },
+            );
 
             if (!response.ok) {
                 throw new Error("Failed to close trade");
             }
-            
-            
         } catch (error) {
             console.error(error);
         }
@@ -81,7 +82,7 @@
                     {#each props.trades as trade}
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm text-gray-900"
-                                >{trade.id}</td
+                                >{trade.platform_id}</td
                             >
                             <td class="px-4 py-3 text-sm text-gray-900"
                                 >{trade.strategy}</td
@@ -112,7 +113,8 @@
                                 ).toLocaleString()}</td
                             >
                             <td class="px-4 py-3 text-sm text-gray-900">
-                                <button class="text-blue-500 hover:text-blue-700" 
+                                <button
+                                    class="text-blue-500 hover:text-blue-700"
                                     onclick={() => {
                                         closeTrade(trade);
                                     }}

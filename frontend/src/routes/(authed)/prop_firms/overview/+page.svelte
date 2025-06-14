@@ -66,16 +66,23 @@
 
     // Function to update a firm in the list without reloading the page
     function updateFirmInList(result: any, firmId: number) {
-        // Determine where the updated firm object is located in the response
-        const updatedFirm: PropFirm | undefined = result?.prop_firm ?? result;
-        console.log(updatedFirm);
-        if (updatedFirm && typeof updatedFirm.id === "number") {
-            // Replace only the matching firm in the array
-            firms = firms.map((firm: PropFirm) =>
-                firm.id === firmId ? updatedFirm : firm,
-            );
+        // Extract the prop_firm object when available
+        const returnedData: Partial<PropFirm> | undefined =
+            result?.prop_firm ?? result;
+
+        if (!returnedData) {
+            return; // Nothing to merge
         }
-        // If the updated firm wasn't found, we silently ignore; no full reload.
+
+        // Merge the newly returned data (e.g. updated trades) into the existing firm
+        firms = firms.map((firm: PropFirm) => {
+            if (firm.id !== firmId) return firm;
+
+            return {
+                ...firm,
+                ...returnedData,
+            } as PropFirm;
+        });
     }
 
     async function syncAllPropFirms() {
