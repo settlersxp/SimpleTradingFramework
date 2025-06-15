@@ -25,6 +25,14 @@ def create_signal():
 @bp.route("/<int:signal_id>", methods=["DELETE"])
 def delete_signal(signal_id):
     signal = db.session.get(Signal, signal_id)
+    # if the signal is not found, return a 404 error
+    if not signal:
+        return jsonify({"message": "Signal not found"}), 404
+
+    # if the signal is associated with a trade, don't delete it
+    if signal.prop_firm_associations:
+        return jsonify({"message": "Signal is associated with a trade"}), 400
+
     db.session.delete(signal)
     db.session.commit()
     return jsonify({"message": "Signal deleted successfully"})

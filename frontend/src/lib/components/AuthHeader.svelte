@@ -6,10 +6,6 @@
             path: "/prop_firms/",
         },
         {
-            name: "Trades",
-            path: "/trades/view",
-        },
-        {
             name: "Trade Pairs",
             path: "/trade_pairs",
         },
