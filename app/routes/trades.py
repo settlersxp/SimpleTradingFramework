@@ -7,7 +7,6 @@ from app.routes.trades_association import (
 )
 from app.models.prop_firm import PropFirm
 from app.models.trade import Trade
-from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app import db
 import json
 
@@ -16,16 +15,16 @@ bp = Blueprint("trades", __name__)
 
 
 @bp.route("/<int:trade_id>", methods=["GET"])
-def get_trade(signal_id):
+def get_trade(trade_id):
     """Retrieve a specific trade by its ID.
 
     Args:
-        signal_id (int): The ID of the signal to retrieve.
+        trade_id (int): The ID of the signal to retrieve.
 
     Returns:
         JSON response containing the trade data or an error message if not found.
     """
-    trade = db.session.get(Trade, signal_id)
+    trade = db.session.get(Trade, trade_id)
     if not trade:
         return jsonify({"error": "Trade not found"}), 404
     return jsonify(trade.to_dict())
@@ -50,13 +49,17 @@ def handle_trade_with_parameters(saved_signal):
     Args:
         mt_string (str): The MT string to add the trade.
     """
-    try:
-        trades = add_trade_associations(saved_signal)
-        return jsonify(
-            {"status": "success", "trades": [trade.signal_id for trade in trades]}
-        )
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 400
+
+    if saved_signal.position_size == 0:
+        return close_all_trade_associations(saved_signal)
+    else:
+        try:
+            trades = add_trade_associations(saved_signal)
+            return jsonify(
+                {"status": "success", "trades": [trade.signal_id for trade in trades]}
+            )
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 400
 
 
 @bp.route("/view", methods=["GET"])
@@ -114,18 +117,26 @@ def list_trades():
     return jsonify({"trades": trades_with_response})
 
 
-@bp.route("/<int:trade_id>", methods=["DELETE"])
-def delete_trade(trade_id):
+@bp.route(
+    "/<int:signal_id>/prop_firm/<int:prop_firm_id>",
+    methods=["DELETE"],
+    strict_slashes=False,
+)
+def delete_trade(signal_id, prop_firm_id):
     """Delete a specific trade by its ID.
 
     Args:
-        trade_id (int): The ID of the trade to delete.
+        signal_id (int): The ID of the signal to delete.
+        prop_firm_id (int): The ID of the prop firm to delete.
 
     Returns:
         JSON response indicating the status of the deletion operation.
     """
     try:
-        trade = Trade.query.get_or_404(trade_id)
+        trade = Trade.query.filter_by(
+            signal_id=signal_id,
+            prop_firm_id=prop_firm_id,
+        ).first()
         db.session.delete(trade)
         db.session.commit()
         return jsonify({"message": "Trade deleted successfully"}), 200

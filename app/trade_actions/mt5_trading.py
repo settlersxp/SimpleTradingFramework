@@ -420,16 +420,15 @@ class MT5Trading(TradingInterface):
                     new_signal,
                     prop_firm,
                     str(position.ticket),
-                    list(position),
+                    position._asdict(),
+                    position.symbol,
                 )
 
             # join with the signal table to get the strategy name
             new_signal = Signal.query.filter_by(id=existing_trade.signal_id).first()
             output_trade = existing_trade.to_dict()
             output_trade["strategy"] = new_signal.strategy
-            output_trade["order_type"] = (
-                "buy" if new_signal.order_type == "0" else "sell"
-            )
+            output_trade["order_type"] = new_signal.order_type
             output_trade["contracts"] = new_signal.contracts
             output_trade["ticker"] = new_signal.ticker
             output_trade["position_size"] = new_signal.position_size

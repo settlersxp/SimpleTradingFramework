@@ -11,7 +11,7 @@ import json
 bp = Blueprint("trades_association", __name__)
 
 
-def identify_old_trade(signal: Signal) -> Trade | None:
+def identify_old_trade(signal: Signal) -> list[Trade] | None:
     """Identify the old trade for a given signal.
 
     Args:
@@ -32,18 +32,18 @@ def identify_old_trade(signal: Signal) -> Trade | None:
         print(f"No old signal found for {signal.id}")
         return None
 
-    old_trade = (
+    old_trades = (
         db.session.query(Trade)
         .filter_by(signal_id=old_signal.id)
         .order_by(Trade.created_at.desc())
-        .first()
+        .all()
     )
 
-    if not old_trade:
+    if not old_trades:
         print(f"No old trade found for {old_signal.id}")
         return None
 
-    return old_trade
+    return old_trades
 
 
 @staticmethod
@@ -70,11 +70,13 @@ def cancel_trade(
         print(f"Trade {old_trade.ticker} {old_trade.platform_id} canceled successfully")
         return old_trade.platform_id
     else:
-        print(f"Error canceling trade {old_trade.ticker} {old_trade.platform_id}: {outcome.message}")
+        print(
+            f"Error canceling trade {old_trade.ticker} {old_trade.platform_id}: {outcome.message}"
+        )
         return None
 
 
-def close_all_trade_associations(signal):
+def close_all_trade_associations(signal: Signal):
     """Close all trade associations for a signal.
 
     Args:
@@ -82,32 +84,16 @@ def close_all_trade_associations(signal):
     """
     trades = []
 
-    old_trade = identify_old_trade(signal)
-    if not old_trade:
+    old_trades = identify_old_trade(signal)
+    if not old_trades:
         print(f"No old trade found for {signal.id}")
         return []
 
-    prop_firms = (
-        db.session.query(PropFirm)
-        .join(Trade)
-        .filter_by(platform_id=old_trade.platform_id)
-        .all()
-    )
-
-    for prop_firm in prop_firms:
-        associations = prop_firm.get_trade_associations()
-        if not associations:
-            continue
-
-        for association in associations:
-            if not association.trade_id:
-                print(f"No trade id found for {association.platform_id}")
-                continue
-
-            print(f"Closing trade {association.platform_id} for {prop_firm.name}")
-            trade_id = cancel_trade(old_trade, association, prop_firm)
-            if trade_id:
-                trades.append(trade_id)
+    for trade in old_trades:
+        print(f"Closing trade {trade.platform_id} for {trade.prop_firm.name}")
+        trade_id = cancel_trade(trade, trade.prop_firm)
+        if trade_id:
+            trades.append(trade_id)
     return trades
 
 
@@ -122,12 +108,6 @@ def add_trade_associations(saved_signal: Signal):
         [Trade]: One trade for each prop firm of each user.
     """
     trades = []
-
-    # Now we can directly use prop_firm as it has the association
-    if saved_signal.position_size == 0:
-        # get the prop firms with this trade
-        trades = close_all_trade_associations(saved_signal)
-        return trades
 
     # for every user in the database, get only the active prop firms
     all_users = db.session.query(User).all()
@@ -171,7 +151,7 @@ def add_trade_associations(saved_signal: Signal):
                 prop_firm_id=prop_firm.id,
                 signal_id=saved_signal.id,
                 platform_id=outcome.details["request_id"],
-                response=json.dumps(outcome.details["response"]),
+                response=json.dumps(outcome.details["response"]._asdict()),
                 ticker=association.label,
             )
             db.session.add(prop_firm_trade)

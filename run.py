@@ -168,31 +168,38 @@ class FlaskApp:
         def open_positions():
             from app.routes.trades import handle_trade_with_parameters
             from app.routes.signals import save_signal
+
             saved_signal = save_signal(request.get_data(as_text=True))
             return handle_trade_with_parameters(
                 request.get_data(as_text=True),
                 saved_signal,
             )
 
+        @self.app.route("/api/trades", methods=["POST"], strict_slashes=False)
+        def api_trades():
+            # Used in order to create a trade from the API using an already saved signal
+            from app.routes.trades import handle_trade_with_parameters
+            from app.routes.signals import Signal
+
+            signal = Signal.from_mt_string(request.get_data(as_text=True))
+            return handle_trade_with_parameters(signal)
+
         @self.app.route("/trades", methods=["POST"], strict_slashes=False)
         def trades():
+            # Used in order to create a trade from the API using a new signal
             from app.routes.trades import handle_trade_with_parameters
             from app.routes.signals import save_signal
+
             saved_signal = save_signal(request.get_data(as_text=True))
-            return handle_trade_with_parameters(
-                request.get_data(as_text=True),
-                saved_signal,
-            )
+            return handle_trade_with_parameters(saved_signal)
 
         @self.app.route("/receiveMessage", methods=["POST"], strict_slashes=False)
         def receive_message():
             from app.routes.trades import handle_trade_with_parameters
             from app.routes.signals import save_signal
+
             saved_signal = save_signal(request.get_data(as_text=True))
-            return handle_trade_with_parameters(
-                request.get_data(as_text=True),
-                saved_signal,
-            )
+            return handle_trade_with_parameters(saved_signal)
 
         @self.app.route("/health", methods=["GET"])
         def health():

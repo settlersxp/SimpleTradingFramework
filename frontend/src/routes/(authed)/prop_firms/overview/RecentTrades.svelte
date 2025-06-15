@@ -38,6 +38,26 @@
             console.error("Error closing trade:", error);
         }
     }
+
+    async function deleteTrade(trade: Trade) {
+        const url = `/api/trades/${trade.signal_id}/prop_firm/${trade.prop_firm_id}`
+        console.log("URL in deleteTrade:", url);
+        try {
+            const response = await fetch(
+                url,
+                {
+                    method: "DELETE",
+                },
+            );
+
+            console.log("Response:", response);
+            if (!response.ok) {
+                throw new Error("Failed to delete trade");
+            }
+        } catch (error) {
+            console.error("Error deleting trade:", error);
+        }
+    }
 </script>
 
 <div class="px-6 py-4">
@@ -124,6 +144,14 @@
                                     }}
                                 >
                                     Close
+                                </button>
+                                <button
+                                    class="text-blue-500 hover:text-blue-700"
+                                    onclick={() => {
+                                        deleteTrade(trade);
+                                    }}
+                                >
+                                    Delete
                                 </button>
                             </td>
                         </tr>

@@ -50,12 +50,14 @@ class Trade(db.Model):
         signal_id,
         platform_id=None,
         response=None,
+        ticker=None,
     ):
         """Initialize a Trades instance."""
         self.prop_firm_id = prop_firm_id
         self.signal_id = signal_id
         self.platform_id = platform_id
         self.response = response
+        self.ticker = ticker
 
     @staticmethod
     def place_trade_with_prop_firms(signal):
@@ -89,6 +91,7 @@ class Trade(db.Model):
         prop_firm,
         platform_id,
         response,
+        ticker,
     ):
         """
         Place a trade with this prop firm.
@@ -98,6 +101,7 @@ class Trade(db.Model):
             signal_id=signal.id,
             platform_id=platform_id,
             response=response,
+            ticker=ticker,
         )
         db.session.add(trade)
         db.session.commit()
