@@ -11,27 +11,46 @@ import json
 bp = Blueprint("trades_association", __name__)
 
 
-def identify_old_trade(trade):
-    """Identify the old trade for a given trade.
+def identify_old_trade(signal: Signal) -> Trade | None:
+    """Identify the old trade for a given signal.
 
     Args:
-        trade (Signal): The trade to identify the old trade for.
+        signal (Signal): The signal to identify the old trade for.
     """
-    old_trade = (
+    old_signal = (
         db.session.query(Signal)
         .filter_by(
-            order_type="buy" if trade.order_type == "sell" else "sell",
-            ticker=trade.ticker,
-            strategy=trade.strategy,
-            contracts=trade.contracts,
+            order_type="buy" if signal.order_type == "sell" else "sell",
+            ticker=signal.ticker,
+            strategy=signal.strategy,
+            contracts=signal.contracts,
         )
         .first()
     )
+
+    if not old_signal:
+        print(f"No old signal found for {signal.id}")
+        return None
+
+    old_trade = (
+        db.session.query(Trade)
+        .filter_by(signal_id=old_signal.id)
+        .order_by(Trade.created_at.desc())
+        .first()
+    )
+
+    if not old_trade:
+        print(f"No old trade found for {old_signal.id}")
+        return None
+
     return old_trade
 
 
 @staticmethod
-def cancel_trade(old_trade, association, prop_firm):
+def cancel_trade(
+    old_trade: Trade,
+    prop_firm: PropFirm,
+) -> int | None:
     """Cancel a trade and remove its association with a prop firm.
 
     Args:
@@ -39,34 +58,40 @@ def cancel_trade(old_trade, association, prop_firm):
         association: The association object linking the prop firm and trade pair.
         prop_firm (PropFirm): The prop firm associated with the trade.
     """
-    old_trade_response = json.loads(association.response)
-    outcome = prop_firm.trading.cancel_trade(old_trade_response)
+    outcome = prop_firm.trading.cancel_trade(old_trade)
 
     if outcome.success:
-        # association.delete()
-        # Trade.query.filter_by(id=old_trade.id).delete()
-        print(f"Trade {old_trade.id} canceled successfully")
-        return old_trade.id
+        Trade.query.filter_by(
+            platform_id=old_trade.platform_id,
+            prop_firm_id=prop_firm.id,
+            signal_id=old_trade.signal_id,
+        ).delete()
+        db.session.commit()
+        print(f"Trade {old_trade.ticker} {old_trade.platform_id} canceled successfully")
+        return old_trade.platform_id
     else:
-        print(f"Error canceling trade {old_trade.id}: {outcome.message}")
+        print(f"Error canceling trade {old_trade.ticker} {old_trade.platform_id}: {outcome.message}")
         return None
 
 
-def close_all_trade_associations(trade):
-    """Close all trade associations for a trade.
+def close_all_trade_associations(signal):
+    """Close all trade associations for a signal.
 
     Args:
-        trade (Trade): The trade to close.
+        signal (Signal): The signal to close.
     """
     trades = []
 
-    old_trade = identify_old_trade(trade)
+    old_trade = identify_old_trade(signal)
     if not old_trade:
-        print(f"No old trade found for {trade.id}")
+        print(f"No old trade found for {signal.id}")
         return []
 
     prop_firms = (
-        db.session.query(PropFirm).join(Trade).filter_by(signal_id=old_trade.id).all()
+        db.session.query(PropFirm)
+        .join(Trade)
+        .filter_by(platform_id=old_trade.platform_id)
+        .all()
     )
 
     for prop_firm in prop_firms:
@@ -134,7 +159,9 @@ def add_trade_associations(saved_signal: Signal):
 
             print(f"Current prop firm {prop_firm.name}")
             # If association exists, use the label when placing the trade
-            outcome = prop_firm.trading.place_trade(saved_signal, label=association.label)
+            outcome = prop_firm.trading.place_trade(
+                saved_signal, label=association.label
+            )
             if not outcome.success:
                 print(f"Error placing trade: {outcome.message}")
                 continue
@@ -145,6 +172,7 @@ def add_trade_associations(saved_signal: Signal):
                 signal_id=saved_signal.id,
                 platform_id=outcome.details["request_id"],
                 response=json.dumps(outcome.details["response"]),
+                ticker=association.label,
             )
             db.session.add(prop_firm_trade)
 

@@ -2,6 +2,9 @@ import type { ExecuteTradeReturn } from './ExecuteTradeReturn';
 
 export type Trade = {
     id: number;
+    signal_id?: number;
+    prop_firm_id?: number;
+    platform_id?: number;
     strategy: string;
     order_type: string;
     contracts: number;

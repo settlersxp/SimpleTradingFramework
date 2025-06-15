@@ -39,6 +39,10 @@ class Trade(db.Model):
         db.DateTime,
         default=db.func.now(),
     )
+    ticker = db.Column(
+        db.String(10),
+        nullable=True,
+    )
 
     def __init__(
         self,

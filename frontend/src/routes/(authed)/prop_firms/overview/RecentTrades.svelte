@@ -20,18 +20,22 @@
 
     async function closeTrade(trade: Trade) {
         try {
-            const response = await fetch(
-                `/api/trades/close?trade_id=${trade.id}`,
-                {
-                    method: "GET",
+            const response = await fetch(`/api/trades/close`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-            );
+                body: JSON.stringify({
+                    platform_id: trade.platform_id,
+                    prop_firm_id: trade.prop_firm_id,
+                }),
+            });
 
             if (!response.ok) {
                 throw new Error("Failed to close trade");
             }
         } catch (error) {
-            console.error(error);
+            console.error("Error closing trade:", error);
         }
     }
 </script>

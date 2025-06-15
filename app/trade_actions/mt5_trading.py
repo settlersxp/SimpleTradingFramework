@@ -67,7 +67,7 @@ class MT5Trading(TradingInterface):
             self.connected = False
             return False
 
-    def cancel_trade(self, old_trade_response: Dict[str, Any]) -> ExecuteTradeReturn:
+    def cancel_trade(self, trade: Trade) -> ExecuteTradeReturn:
         """
         Cancel a trade on MT5
         """
@@ -76,28 +76,39 @@ class MT5Trading(TradingInterface):
 
             existing_trades = mt5.positions_get()
             result = mt5.Close(
-                symbol=old_trade_response[10][3], ticket=old_trade_response[2]
+                symbol=trade.ticker,
+                ticket=trade.platform_id,
             )
+
+            if not result:
+                error_message = (
+                    f"Error canceling trade: {trade.ticker} {trade.platform_id}"
+                )
+                print(error_message)
+                return ExecuteTradeReturn(
+                    success=False,
+                    message=error_message,
+                    trade_id=trade.platform_id,
+                    details={},
+                )
+
             remaining_trades = mt5.positions_get()
             if len(remaining_trades) != len(existing_trades) - 1:
                 return ExecuteTradeReturn(
                     success=False,
                     message="Trade failed to be canceled even if the broker returned a success code",
-                    trade_id=None,
+                    trade_id=trade.platform_id,
                     details={},
                 )
-            if not result:
-                error_message = f"Error canceling trade: {old_trade_response[10][3]} - {old_trade_response[2]}"
-                print(error_message)
-                return ExecuteTradeReturn(
-                    success=False, message=error_message, trade_id=None, details={}
-                )
-            success_message = f"Trade canceled successfully {old_trade_response[10][3]} {old_trade_response[2]}"
+
+            success_message = (
+                f"Trade canceled successfully {trade.ticker} {trade.platform_id}"
+            )
             print(success_message)
             return ExecuteTradeReturn(
                 success=True,
                 message=success_message,
-                trade_id=None,
+                trade_id=trade.platform_id,
                 details={"retcode": result, "result": result},
             )
         except Exception as e:
@@ -105,7 +116,7 @@ class MT5Trading(TradingInterface):
             return ExecuteTradeReturn(
                 success=False,
                 message=f"Tried to close trade but failed with error: {str(e)}",
-                trade_id=old_trade_response[2],
+                trade_id=trade.platform_id,
                 details={"result": mt5.last_error()},
             )
 
@@ -384,12 +395,10 @@ class MT5Trading(TradingInterface):
                 (account_info.balance - account_info.equity) / account_info.balance
             ) * 100
 
+        to_return["trades"] = []
         # Get open positions
         positions = mt5.positions_get()
-        if not positions:
-            return to_return
 
-        to_return["trades"] = []
         for position in positions:
             # Check if trade already exists
             existing_trade = Trade.query.filter_by(
@@ -435,5 +444,13 @@ class MT5Trading(TradingInterface):
         ).all()
         for trade in trades_to_delete:
             db.session.delete(trade)
+
+        # If there are no trades in MT5 delete all the trades for the current prop firm
+        if not positions:
+            Trade.query.filter(
+                Trade.prop_firm_id == prop_firm.id,
+            ).delete()
+
+        db.session.commit()
 
         return to_return

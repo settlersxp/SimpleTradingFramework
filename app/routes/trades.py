@@ -173,20 +173,22 @@ def replay_trade(trade_id):
 @bp.route("/close", methods=["POST"])
 def close_trade():
     """Close a specific trade identified by trade_id query parameter."""
-    trade_id = request.get_json().get("trade_id")
+    platform_id = request.get_json().get("platform_id")
     prop_firm_id = request.get_json().get("prop_firm_id")
-    association = PropFirmTradePairAssociation.query.filter_by(
-        prop_firm_id=prop_firm_id,
-        trade_pair_id=trade_id,
-    ).first()
-    if not association:
-        return jsonify({"status": "error", "message": "Association not found"}), 404
 
-    trade = Trade.query.get_or_404(trade_id)
+    trade = Trade.query.filter_by(
+        platform_id=platform_id,
+        prop_firm_id=prop_firm_id,
+    ).first()
+
     if not trade:
         return jsonify({"status": "error", "message": "Trade not found"}), 404
 
-    trade_id = cancel_trade(trade, association, prop_firm_id)
+    prop_firm = PropFirm.query.filter_by(id=prop_firm_id).first()
+    if not prop_firm:
+        return jsonify({"status": "error", "message": "Prop firm not found"}), 404
+
+    trade_id = cancel_trade(trade, prop_firm)
     return jsonify(
         {
             "status": "success",
@@ -204,10 +206,10 @@ def close_all_trades():
         JSON response indicating the status of the close operation.
     """
     try:
-        trade_id = request.args.get("trade_id")
-        trade = Trade.query.get_or_404(trade_id)
+        signal_id = request.args.get("signal_id")
+        signal = Signal.query.get_or_404(signal_id)
 
-        trades = close_all_trade_associations(trade)
+        trades = close_all_trade_associations(signal)
 
         return (
             jsonify(
