@@ -1,8 +1,21 @@
 <script lang="ts">
     import type { Trade } from "$lib/types/Trade";
 
-    // We now expect an array of trades directly
+    // We expect an array of trades via props
     const props = $props<{ trades: Trade[] }>();
+
+    // Local reactive copy of trades so we can update the UI after close/delete without mutating props
+    let trades = $state<Trade[]>([...props.trades]);
+
+    // Keep local state in sync if the parent sends new trades
+    $effect(() => {
+        if (
+            props.trades !== undefined &&
+            props.trades.length !== trades.length
+        ) {
+            trades = [...props.trades];
+        }
+    });
 
     // Helper function to determine if the order is a buy or sell
     function getOrderTypeDisplay(orderType: string) {
@@ -16,6 +29,15 @@
         return orderType === "0" || orderType === "sell" || orderType === "SELL"
             ? "bg-red-100 text-red-800"
             : "bg-green-100 text-green-800";
+    }
+
+    function removeTradeFromList(trade: Trade) {
+        // Try to remove by id first, fallback to platform_id if id is undefined
+        trades = trades.filter(
+            (t) =>
+                (trade.id !== undefined && t.id !== trade.id) ||
+                (trade.id === undefined && t.platform_id !== trade.platform_id),
+        );
     }
 
     async function closeTrade(trade: Trade) {
@@ -34,26 +56,29 @@
             if (!response.ok) {
                 throw new Error("Failed to close trade");
             }
+
+            // Optimistically remove trade from local list on success
+            removeTradeFromList(trade);
         } catch (error) {
             console.error("Error closing trade:", error);
         }
     }
 
     async function deleteTrade(trade: Trade) {
-        const url = `/api/trades/${trade.signal_id}/prop_firm/${trade.prop_firm_id}`
+        const url = `/api/trades/${trade.signal_id}/prop_firm/${trade.prop_firm_id}`;
         console.log("URL in deleteTrade:", url);
         try {
-            const response = await fetch(
-                url,
-                {
-                    method: "DELETE",
-                },
-            );
+            const response = await fetch(url, {
+                method: "DELETE",
+            });
 
             console.log("Response:", response);
             if (!response.ok) {
                 throw new Error("Failed to delete trade");
             }
+
+            // Remove the deleted trade from the local state so UI updates
+            removeTradeFromList(trade);
         } catch (error) {
             console.error("Error deleting trade:", error);
         }
@@ -63,7 +88,7 @@
 <div class="px-6 py-4">
     <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Trades</h3>
 
-    {#if Array.isArray(props.trades) && props.trades.length > 0}
+    {#if Array.isArray(trades) && trades.length > 0}
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead>
@@ -103,7 +128,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                    {#each props.trades as trade}
+                    {#each trades as trade}
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm text-gray-900"
                                 >{trade.platform_id}</td

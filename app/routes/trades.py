@@ -55,11 +55,9 @@ def handle_trade_with_parameters(saved_signal):
     else:
         try:
             trades = add_trade_associations(saved_signal)
-            return jsonify(
-                {"status": "success", "trades": [trade.signal_id for trade in trades]}
-            )
+            return trades
         except Exception as e:
-            return jsonify({"status": "error", "message": str(e)}), 400
+            raise e
 
 
 @bp.route("/view", methods=["GET"])

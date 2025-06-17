@@ -43,4 +43,4 @@ def save_signal(mt_string):
     signal = Signal.from_mt_string(mt_string)
     db.session.add(signal)
     db.session.commit()
-    return signal.to_dict()
+    return signal

@@ -190,7 +190,7 @@ class MT5Trading(TradingInterface):
             # Execute the trade with updated prices
             result = self._execute_trade(trade, label)
 
-            if result["success"]:
+            if result.success:
                 self.last_trade_time = datetime.now()
 
             # If there are more trades in the queue,

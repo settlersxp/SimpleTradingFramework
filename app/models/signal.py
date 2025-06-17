@@ -66,36 +66,46 @@ class Signal(TimezoneAwareModel):
     @staticmethod
     def from_mt_string(mt_string: str):
         """
-        Convert a MT string to a Trade model
+        Convert a MT string to a Trade model.
+
+        There are two formats for the MT string:
+        "\"strategy\":\"Stiff Zone\", \"order\":\"sell\", \"contracts\":\"0.001\", \"ticker\":\"BTCUSDT.P\", \"position_size\":\"-0.001\""
+        '"strategy":"Stiff Zone", "order":"sell", "contracts":"0.001", "ticker":"BTCUSDT.P", "position_size":-0.001'
         """
         try:
-            # Attempt to format the input string to be a valid JSON string
+            # Handle both escaped and unescaped formats
+            if mt_string.startswith('"'):
+                # Handle escaped format by unescaping
+                mt_string = mt_string.encode().decode("unicode_escape")
+                mt_string = mt_string.strip('"')
+            else:
+                # Handle unescaped format by stripping outer quotes
+                mt_string = mt_string.strip("'")
+
+            # Format as proper JSON
             formatted_string = "{" + mt_string.strip() + "}"
 
-            # Load the JSON data
-            data = json.loads(formatted_string)
+            # Try to parse the JSON
+            try:
+                data = json.loads(formatted_string)
+            except json.JSONDecodeError:
+                # Apply regex to fix unquoted values if needed
+                formatted_string = re.sub(
+                    r'(?<="ticker":)([^\s",]+)', r'"\1"', formatted_string
+                )
+                data = json.loads(formatted_string)
 
-        except json.JSONDecodeError:
-            # If JSON loading fails, apply regex to fix the string
-            formatted_string = "{" + mt_string.strip() + "}"
-            formatted_string = re.sub(
-                r'(?<="ticker":)([^\s",]+)', r'"\1"', formatted_string
+            # Create a Signal instance using the extracted data
+            return Signal(
+                strategy=data["strategy"],
+                order_type=data["order"],
+                contracts=float(data["contracts"]),
+                ticker=data["ticker"],
+                position_size=float(data["position_size"]),
             )
 
-            # Try loading the JSON data again
-            data = json.loads(formatted_string)
-
-        except KeyError as e:
+        except (json.JSONDecodeError, KeyError) as e:
             raise ValueError(f"Invalid MT string format: {e}")
-
-        # Create a Trade instance using the extracted data
-        return Signal(
-            strategy=data["strategy"],
-            order_type=data["order"],
-            contracts=float(data["contracts"]),
-            ticker=data["ticker"],
-            position_size=float(data["position_size"]),
-        )
 
     @staticmethod
     def update_matching_trades(
@@ -125,3 +135,17 @@ class Signal(TimezoneAwareModel):
 
         db.session.commit()
         return matching_trades
+
+    @staticmethod
+    def get_signal_by_mt_string(mt_string: str):
+        """
+        Get a signal by its MT string
+        """
+        new_signal = Signal.from_mt_string(mt_string)
+        existing_signal = Signal.query.filter_by(
+            strategy=new_signal.strategy,
+            order_type=new_signal.order_type,
+            ticker=new_signal.ticker,
+            position_size=new_signal.position_size,
+        ).first()
+        return existing_signal

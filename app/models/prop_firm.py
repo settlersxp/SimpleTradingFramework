@@ -45,7 +45,7 @@ class PropFirm(TimezoneAwareModel):
     def get_users(self) -> List["User"]:
         """Manually get all users associated with this prop firm"""
         from app.models.user import User
-        
+
         stmt = (
             select(User)
             .join(user_prop_firm)

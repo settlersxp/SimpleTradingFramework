@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app.models.prop_firm import PropFirm
 from app.models.signal import Signal
-from app.models.trade import Trade
+from app.models.trade import Trade, associate_signal
 from app.models.trade_pairs import TradePairs
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app import db
@@ -93,7 +93,7 @@ def close_all_trade_associations(signal: Signal):
         print(f"Closing trade {trade.platform_id} for {trade.prop_firm.name}")
         trade_id = cancel_trade(trade, trade.prop_firm)
         if trade_id:
-            trades.append(trade_id)
+            trades.append(trade)
     return trades
 
 
@@ -140,27 +140,25 @@ def add_trade_associations(saved_signal: Signal):
             print(f"Current prop firm {prop_firm.name}")
             # If association exists, use the label when placing the trade
             outcome = prop_firm.trading.place_trade(
-                saved_signal, label=association.label
+                saved_signal, 
+                label=association.label
             )
             if not outcome.success:
                 print(f"Error placing trade: {outcome.message}")
                 continue
 
             # Add trade to prop firm with platform ID
-            prop_firm_trade = Trade(
-                prop_firm_id=prop_firm.id,
-                signal_id=saved_signal.id,
-                platform_id=outcome.details["request_id"],
+            prop_firm_trade = Trade.associate_signal(
+                signal=saved_signal,
+                prop_firm=prop_firm,
+                platform_id=outcome.details['response'].ticket,
                 response=json.dumps(outcome.details["response"]._asdict()),
                 ticker=association.label,
             )
-            db.session.add(prop_firm_trade)
 
             prop_firm.update_available_balance(saved_signal)
-            print(f"Trade {outcome.details['request_id']} placed successfully")
+            print(f"Trade {outcome.details['response'].ticket} placed successfully")
             trades.append(prop_firm_trade)
-
-            db.session.commit()
     return trades
 
 

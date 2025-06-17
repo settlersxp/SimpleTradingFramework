@@ -1,4 +1,6 @@
 from app import db
+from app.models.signal import Signal
+from app.models.prop_firm import PropFirm
 
 
 class Trade(db.Model):
@@ -87,25 +89,44 @@ class Trade(db.Model):
 
     @staticmethod
     def associate_signal(
-        signal,
-        prop_firm,
-        platform_id,
-        response,
-        ticker,
+        signal: Signal,
+        prop_firm: PropFirm,
+        platform_id: int,
+        response: dict,
+        ticker: str,
     ):
         """
         Place a trade with this prop firm.
         """
-        trade = Trade(
+        # Check if a trade already exists for this prop_firm / signal pair. The
+        # composite primary-key (prop_firm_id, signal_id) must be unique, so
+        # attempting to insert duplicates will raise an ``IntegrityError``.  If
+        # a record already exists we simply update its details and return it.
+
+        existing_trade: "Trade" | None = Trade.query.filter_by(
+            prop_firm_id=prop_firm.id,
+            signal_id=signal.id,
+        ).first()
+
+        if existing_trade:
+            # Update the existing record with the latest execution details.
+            existing_trade.platform_id = platform_id
+            existing_trade.response = response
+            existing_trade.ticker = ticker
+            db.session.commit()
+            return existing_trade
+
+        # No previous record – create a brand-new association.
+        new_trade = Trade(
             prop_firm_id=prop_firm.id,
             signal_id=signal.id,
             platform_id=platform_id,
             response=response,
             ticker=ticker,
         )
-        db.session.add(trade)
+        db.session.add(new_trade)
         db.session.commit()
-        return trade
+        return new_trade
 
     def to_dict(self):
         """
@@ -118,3 +139,18 @@ class Trade(db.Model):
             "response": self.response,
             "created_at": self.created_at,
         }
+
+
+# ---------------------------------------------------------------------------
+# Compatibility shim --------------------------------------------------------
+# ---------------------------------------------------------------------------
+
+# Historically other modules imported ``associate_signal`` directly from
+# ``app.models.trade``.  Provide a thin wrapper so these imports continue to
+# work after refactoring.
+
+
+def associate_signal(*args, **kwargs):  # noqa: D401
+    """Compatibility wrapper for ``Trade.associate_signal``."""
+
+    return Trade.associate_signal(*args, **kwargs)
