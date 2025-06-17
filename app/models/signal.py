@@ -73,39 +73,23 @@ class Signal(TimezoneAwareModel):
         '"strategy":"Stiff Zone", "order":"sell", "contracts":"0.001", "ticker":"BTCUSDT.P", "position_size":-0.001'
         """
         try:
-            # Handle both escaped and unescaped formats
-            if mt_string.startswith('"'):
-                # Handle escaped format by unescaping
-                mt_string = mt_string.encode().decode("unicode_escape")
-                mt_string = mt_string.strip('"')
-            else:
-                # Handle unescaped format by stripping outer quotes
-                mt_string = mt_string.strip("'")
-
-            # Format as proper JSON
+            # Attempt to format the input string to be a valid JSON string
             formatted_string = "{" + mt_string.strip() + "}"
+            escaped_string = formatted_string.replace("'", '"')
+            # Load the JSON data
+            data = json.loads(escaped_string)
+        except json.JSONDecodeError:
+            formatted_string = "{" + mt_string.strip() + "}"
+            data = json.loads(formatted_string)
 
-            # Try to parse the JSON
-            try:
-                data = json.loads(formatted_string)
-            except json.JSONDecodeError:
-                # Apply regex to fix unquoted values if needed
-                formatted_string = re.sub(
-                    r'(?<="ticker":)([^\s",]+)', r'"\1"', formatted_string
-                )
-                data = json.loads(formatted_string)
-
-            # Create a Signal instance using the extracted data
-            return Signal(
-                strategy=data["strategy"],
-                order_type=data["order"],
-                contracts=float(data["contracts"]),
-                ticker=data["ticker"],
-                position_size=float(data["position_size"]),
-            )
-
-        except (json.JSONDecodeError, KeyError) as e:
-            raise ValueError(f"Invalid MT string format: {e}")
+        # Create a Trade instance using the extracted data
+        return Signal(
+            strategy=data["strategy"],
+            order_type=data["order"],
+            contracts=float(data["contracts"]),
+            ticker=data["ticker"],
+            position_size=abs(float(data["position_size"])),
+        )
 
     @staticmethod
     def update_matching_trades(

@@ -170,9 +170,7 @@ class FlaskApp:
             from app.routes.signals import save_signal
 
             saved_signal = save_signal(request.get_data(as_text=True))
-            return handle_trade_with_parameters(
-               saved_signal
-            )
+            return handle_trade_with_parameters(saved_signal)
 
         @self.app.route("/api/trades", methods=["POST"], strict_slashes=False)
         def api_trades():
@@ -190,21 +188,35 @@ class FlaskApp:
             except Exception as e:
                 return jsonify({"status": "error", "message": str(e)}), 400
 
-            return jsonify({"status": "success", "trades": [trade.signal_id for trade in trades_paced]})
+            return jsonify(
+                {
+                    "status": "success",
+                    "trades": [trade.signal_id for trade in trades_paced],
+                }
+            )
 
         @self.app.route("/trades", methods=["POST"], strict_slashes=False)
         def trades():
             # Used in order to create a trade from the API using a new signal
             from app.routes.trades import handle_trade_with_parameters
-            from app.routes.signals import save_signal
+            from app.routes.signals import Signal, save_signal
 
-            saved_signal = save_signal(request.get_data(as_text=True))
+            signal = Signal.get_signal_by_mt_string(request.get_data(as_text=True))
+
+            if not signal:
+                signal = save_signal(request.get_data(as_text=True))
+
             try:
-                trades_paced = handle_trade_with_parameters(saved_signal)
+                trades_paced = handle_trade_with_parameters(signal)
             except Exception as e:
                 return jsonify({"status": "error", "message": str(e)}), 400
 
-            return jsonify({"status": "success", "trades": [trade.signal_id for trade in trades_paced]})
+            return jsonify(
+                {
+                    "status": "success",
+                    "trades": [trade.signal_id for trade in trades_paced],
+                }
+            )
 
         @self.app.route("/receiveMessage", methods=["POST"], strict_slashes=False)
         def receive_message():
@@ -217,7 +229,12 @@ class FlaskApp:
             except Exception as e:
                 return jsonify({"status": "error", "message": str(e)}), 400
 
-            return jsonify({"status": "success", "trades": [trade.signal_id for trade in trades_paced]})
+            return jsonify(
+                {
+                    "status": "success",
+                    "trades": [trade.signal_id for trade in trades_paced],
+                }
+            )
 
         @self.app.route("/health", methods=["GET"])
         def health():

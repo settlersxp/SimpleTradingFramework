@@ -11,13 +11,13 @@ import json
 bp = Blueprint("trades_association", __name__)
 
 
-def identify_old_trade(signal: Signal) -> list[Trade] | None:
+def identify_old_trades(signal: Signal) -> list[Trade] | None:
     """Identify the old trade for a given signal.
 
     Args:
         signal (Signal): The signal to identify the old trade for.
     """
-    old_signal = (
+    old_signals = (
         db.session.query(Signal)
         .filter_by(
             order_type="buy" if signal.order_type == "sell" else "sell",
@@ -25,22 +25,22 @@ def identify_old_trade(signal: Signal) -> list[Trade] | None:
             strategy=signal.strategy,
             contracts=signal.contracts,
         )
-        .first()
+        .all()
     )
 
-    if not old_signal:
+    if len(old_signals) == 0:
         print(f"No old signal found for {signal.id}")
         return None
 
     old_trades = (
         db.session.query(Trade)
-        .filter_by(signal_id=old_signal.id)
+        .filter(Trade.signal_id.in_([signal.id for signal in old_signals]))
         .order_by(Trade.created_at.desc())
         .all()
     )
 
-    if not old_trades:
-        print(f"No old trade found for {old_signal.id}")
+    if len(old_trades) == 0:
+        print(f"No old trade found for {signal.id}")
         return None
 
     return old_trades
@@ -84,7 +84,7 @@ def close_all_trade_associations(signal: Signal):
     """
     trades = []
 
-    old_trades = identify_old_trade(signal)
+    old_trades = identify_old_trades(signal)
     if not old_trades:
         print(f"No old trade found for {signal.id}")
         return []
