@@ -151,6 +151,14 @@ class PropFirm(TimezoneAwareModel):
         self.full_balance = full_balance
         self.update_drawdown_percentage()
 
+    def update_available_balance(self, balance: float):
+        self.available_balance = balance
+        self.update_drawdown_percentage()
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
     def to_dict(self):
         return {
             "id": self.id,

@@ -395,6 +395,10 @@ class MT5Trading(TradingInterface):
                 (account_info.balance - account_info.equity) / account_info.balance
             ) * 100
 
+        prop_firm.update_available_balance(account_info.margin_free)
+        prop_firm.name = account_info.company
+        prop_firm.save()
+
         to_return["trades"] = []
         # Get open positions
         positions = mt5.positions_get()
