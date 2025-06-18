@@ -34,6 +34,7 @@ def create_prop_firm():
             ip_address=data.get("ip_address"),
             port=data.get("port"),
             platform_type=data.get("platform_type"),
+            description=data.get("description"),
         )
         db.session.add(prop_firm)
         db.session.commit()
@@ -83,19 +84,10 @@ def get_prop_firms():
     assoc_pf_ids = {item[0] for item in user_assoc_q.all()}
     res_data = [
         {
-            "id": pf.id,
-            "name": pf.name,
-            "full_balance": pf.full_balance,
-            "available_balance": pf.available_balance,
-            "drawdown_percentage": pf.drawdown_percentage,
-            "username": pf.username,
-            "password": pf.password,
-            "ip_address": pf.ip_address,
-            "port": pf.port,
-            "platform_type": pf.platform_type,
+            **pf.to_dict(),
             "is_active": pf.id in assoc_pf_ids,
-            "created_at": pf.created_at.isoformat() if pf.created_at else None,
             "trades": trade_map.get(pf.id, []),
+            "description": pf.description,
         }
         for pf in all_prop_firms
     ]
@@ -191,6 +183,8 @@ def update_prop_firm(prop_firm_id):
             prop_firm.update_drawdown_percentage_on_full_balance_update(
                 float(data["full_balance"])
             )
+        if "description" in data:
+            prop_firm.description = data["description"]
         db.session.commit()
 
         stmt = select(user_prop_firm).where(

@@ -2,23 +2,10 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
+    import type { PropFirm } from "../../../../lib/types/PropFirms";
 
     // Get the id from the page store params
     const id = page.params.id;
-
-    type PropFirm = {
-        id: number;
-        name: string;
-        full_balance: number;
-        available_balance: number;
-        drawdown_percentage: number;
-        is_active: boolean;
-        username: string;
-        password: string;
-        ip_address: string;
-        port: number;
-        platform_type: string;
-    };
 
     let propFirm = $state<PropFirm | null>(null);
     let loading = $state(true);
@@ -240,6 +227,17 @@
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                             />
                         </div>
+                        <label
+                            for="description"
+                            class="block text-sm font-medium text-gray-700"
+                            >Description</label
+                        >
+                        <textarea
+                            id="description"
+                            bind:value={propFirm.description}
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm h-48"
+                        >
+                        </textarea>
                     </div>
 
                     <!-- Active Status -->

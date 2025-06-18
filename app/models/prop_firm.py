@@ -30,6 +30,7 @@ class PropFirm(TimezoneAwareModel):
     ip_address = db.Column(db.String(100), nullable=True)
     port = db.Column(db.Integer, nullable=True)
     platform_type = db.Column(db.String(100), nullable=True)
+    description = db.Column(db.String(500), nullable=True)
 
     # One to many relationship with trades in a different association table
     trade_associations = db.relationship(
@@ -175,6 +176,7 @@ class PropFirm(TimezoneAwareModel):
             "ip_address": self.ip_address,
             "port": self.port,
             "platform_type": self.platform_type,
+            "description": self.description,
         }
 
     def to_insert_dict(self):

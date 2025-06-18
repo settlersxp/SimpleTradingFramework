@@ -16,6 +16,7 @@ export interface PropFirm {
     created_at: string; // ISO format string expected from backend
     // updated_at is not explicitly in the Python to_dict, but was in original TS
     updated_at?: string;
+    description?: string;
     trades?: Trade[]; // Added from Python GET / response structure
     tradePairs?: TradePair[];
 }

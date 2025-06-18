@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { PropFirm } from "$lib/types/PropFirms";
+    import Modal from "$lib/components/Modal.svelte";
 
     const props = $props<{
         firm: PropFirm;
@@ -7,6 +8,13 @@
         onSync: (firmId: number) => void;
         onToggleStatus: (firmId: number, status: boolean) => void;
     }>();
+
+    let showDescription = $state(false);
+
+    function renderDescription() {
+        const content = props.firm.description || "No description available.";
+        return `<div>${content}</div>`;
+    }
 </script>
 
 <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
@@ -15,6 +23,12 @@
             {props.firm.name}
         </h2>
         <div class="flex items-center space-x-4">
+            <button
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
+                onclick={() => (showDescription = true)}
+            >
+                Description
+            </button>
             <button
                 onclick={() =>
                     props.onToggleStatus(props.firm.id, !props.firm.is_active)}
@@ -30,7 +44,7 @@
                 {props.syncing ? "Syncing..." : "Sync"}
             </button>
             <button
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
                 onclick={() =>
                     (window.location.href = `/prop_firms/${props.firm.id}`)}
             >
@@ -39,3 +53,10 @@
         </div>
     </div>
 </div>
+
+<Modal
+    show={showDescription}
+    title="Description"
+    onClose={() => (showDescription = false)}
+    content={renderDescription()}
+/>
