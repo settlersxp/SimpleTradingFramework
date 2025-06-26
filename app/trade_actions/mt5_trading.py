@@ -265,7 +265,7 @@ class MT5Trading(TradingInterface):
             ):
 
                 # lower the contract size by 20%
-                trade.contracts = trade.contracts * 0.8
+                trade.contracts = round(trade.contracts * 0.8, 2)
 
                 # Try to place the order
                 request, result = self.try_to_place_order(
