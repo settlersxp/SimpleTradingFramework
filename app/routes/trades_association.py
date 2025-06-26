@@ -1,12 +1,15 @@
 from flask import Blueprint, jsonify, request
 from app.models.prop_firm import PropFirm
 from app.models.signal import Signal
-from app.models.trade import Trade, associate_signal
+from app.models.trade import Trade
 from app.models.trade_pairs import TradePairs
 from app.models.prop_firm_trade_pair_association import PropFirmTradePairAssociation
 from app import db
 from app.models.user import User
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 bp = Blueprint("trades_association", __name__)
 
@@ -29,7 +32,7 @@ def identify_old_trades(signal: Signal) -> list[Trade] | None:
     )
 
     if len(old_signals) == 0:
-        print(f"No old signal found for {signal.id}")
+        logger.error(f"No old signal found for {signal.id}")
         return None
 
     old_trades = (
@@ -40,7 +43,7 @@ def identify_old_trades(signal: Signal) -> list[Trade] | None:
     )
 
     if len(old_trades) == 0:
-        print(f"No old trade found for {signal.id}")
+        logger.error(f"No old trade found for {signal.id}")
         return None
 
     return old_trades
@@ -67,10 +70,12 @@ def cancel_trade(
             signal_id=old_trade.signal_id,
         ).delete()
         db.session.commit()
-        print(f"Trade {old_trade.ticker} {old_trade.platform_id} canceled successfully")
+        logger.info(
+            f"Trade {old_trade.ticker} {old_trade.platform_id} canceled successfully"
+        )
         return old_trade.platform_id
     else:
-        print(
+        logger.error(
             f"Error canceling trade {old_trade.ticker} {old_trade.platform_id}: {outcome.message}"
         )
         return None
@@ -86,11 +91,11 @@ def close_all_trade_associations(signal: Signal):
 
     old_trades = identify_old_trades(signal)
     if not old_trades:
-        print(f"No old trade found for {signal.id}")
+        logger.error(f"No old trade found for {signal.id}")
         return []
 
     for trade in old_trades:
-        print(f"Closing trade {trade.platform_id} for {trade.prop_firm.name}")
+        logger.info(f"Closing trade {trade.platform_id} for {trade.prop_firm.name}")
         trade_id = cancel_trade(trade, trade.prop_firm)
         if trade_id:
             trades.append(trade)
@@ -140,8 +145,7 @@ def add_trade_associations(saved_signal: Signal):
             print(f"Current prop firm {prop_firm.name}")
             # If association exists, use the label when placing the trade
             outcome = prop_firm.trading.place_trade(
-                saved_signal, 
-                label=association.label
+                saved_signal, label=association.label
             )
             if not outcome.success:
                 print(f"Error placing trade: {outcome.message}")
@@ -151,7 +155,7 @@ def add_trade_associations(saved_signal: Signal):
             prop_firm_trade = Trade.associate_signal(
                 signal=saved_signal,
                 prop_firm=prop_firm,
-                platform_id=outcome.details['response'].ticket,
+                platform_id=outcome.details["response"].ticket,
                 response=json.dumps(outcome.details["response"]._asdict()),
                 ticker=association.label,
             )

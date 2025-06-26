@@ -82,11 +82,14 @@ class Signal(TimezoneAwareModel):
             formatted_string = "{" + mt_string.strip() + "}"
             data = json.loads(formatted_string)
 
+        # conversion from 0.461 to 0.46
+        contracts = round(float(data["contracts"]), 2)
+
         # Create a Trade instance using the extracted data
         return Signal(
             strategy=data["strategy"],
             order_type=data["order"],
-            contracts=float(data["contracts"]),
+            contracts=max(contracts, 0.01),
             ticker=data["ticker"],
             position_size=abs(float(data["position_size"])),
         )
@@ -100,12 +103,7 @@ class Signal(TimezoneAwareModel):
         position_size,
     ):
         """Update all trades that match the given criteria"""
-        matching_trades = Signal.query.filter_by(
-            strategy=strategy,
-            order_type=order_type,
-            ticker=ticker,
-            position_size=position_size,
-        ).all()
+        matching_trades = Signal.query.filter_by(strategy=strategy).all()
 
         for trade in matching_trades:
             # if the future drawdown_percentage is greater than 4% skip the trade

@@ -253,54 +253,26 @@ class MT5Trading(TradingInterface):
                 else mt5.ORDER_TYPE_SELL
             )
 
-            # If the filling type failed, try another one
-            list_of_filling_types = [
-                mt5.ORDER_FILLING_BOC,
-                mt5.ORDER_FILLING_FOK,
-                mt5.ORDER_FILLING_IOC,
-                mt5.ORDER_FILLING_RETURN,
-            ]
-
-            good_return_codes = [
-                mt5.TRADE_RETCODE_PLACED,
-                mt5.TRADE_RETCODE_DONE,
-                mt5.TRADE_RETCODE_DONE_PARTIAL,
-            ]
-
-            bad_return_codes = [
-                mt5.TRADE_RETCODE_INVALID_FILL,
-                mt5.TRADE_RETCODE_PRICE_OFF,
-                mt5.TRADE_RETCODE_MARKET_CLOSED,
-            ]
-
             existing_trades = mt5.positions_get()
-            for filling_type in list_of_filling_types:
-                # Prepare trade request
-                request = {
-                    "action": mt5.TRADE_ACTION_DEAL,
-                    "symbol": label,
-                    "volume": max(trade.contracts, 0.01),
-                    "type": order_type,
-                    "price": price,
-                    "deviation": max(int(trade.position_size), 20),
-                    "magic": 234000,
-                    "type_time": mt5.ORDER_TIME_GTC,
-                    "type_filling": filling_type,
-                }
-                result = mt5.order_send(request)
 
-                # if rejected, try another filling type
-                if result.retcode == mt5.TRADE_RETCODE_INVALID_FILL:
-                    continue
+            request, result = self.try_to_place_order(trade, label, price, order_type)
 
-                # The broker does not offer a price for
-                # this type of order, market is closed or invalid fill
-                if result.retcode in bad_return_codes:
-                    break
+            number_of_tries = 0
+            while (
+                trade.contracts > 0.01
+                and result.retcode != mt5.TRADE_RETCODE_DONE
+                and number_of_tries < 10
+            ):
 
-                # Placed successfully
-                if result.retcode in good_return_codes:
-                    break
+                # lower the contract size by 20%
+                trade.contracts = trade.contracts * 0.8
+
+                # Try to place the order
+                request, result = self.try_to_place_order(
+                    trade, label, price, order_type
+                )
+
+                number_of_tries += 1
 
             # Add optional parameters if provided
             # if tra`de.get('stop_loss'):
@@ -366,6 +338,57 @@ class MT5Trading(TradingInterface):
                 trade_id=None,
                 details={},
             )
+
+    def try_to_place_order(self, trade, label, price, order_type):
+        good_return_codes = [
+            mt5.TRADE_RETCODE_PLACED,
+            mt5.TRADE_RETCODE_DONE,
+            mt5.TRADE_RETCODE_DONE_PARTIAL,
+        ]
+
+        bad_return_codes = [
+            mt5.TRADE_RETCODE_INVALID_FILL,
+            mt5.TRADE_RETCODE_PRICE_OFF,
+            mt5.TRADE_RETCODE_MARKET_CLOSED,
+        ]
+
+        # If the filling type failed, try another one
+        list_of_filling_types = [
+            mt5.ORDER_FILLING_BOC,
+            mt5.ORDER_FILLING_FOK,
+            mt5.ORDER_FILLING_IOC,
+            mt5.ORDER_FILLING_RETURN,
+        ]
+
+        for filling_type in list_of_filling_types:
+            # Prepare trade request
+            request = {
+                "action": mt5.TRADE_ACTION_DEAL,
+                "symbol": label,
+                "volume": trade.contracts,
+                "type": order_type,
+                "price": price,
+                "deviation": max(int(trade.position_size), 20),
+                "magic": 234000,
+                "type_time": mt5.ORDER_TIME_GTC,
+                "type_filling": filling_type,
+            }
+            result = mt5.order_send(request)
+
+            # if rejected, try another filling type
+            if result.retcode == mt5.TRADE_RETCODE_INVALID_FILL:
+                continue
+
+            # The broker does not offer a price for
+            # this type of order, market is closed or invalid fill
+            if result.retcode in bad_return_codes:
+                break
+
+            # Placed successfully
+            if result.retcode in good_return_codes:
+                break
+
+        return request, result
 
     def is_connected(self) -> bool:
         self.connect(self.credentials)
