@@ -35,10 +35,10 @@
         fetchData();
 
         // Set up auto-refresh every 5 seconds
-        const intervalId = setInterval(fetchData, 5000);
+        // const intervalId = setInterval(fetchData, 5000);
 
         // Return cleanup function directly (not from async)
-        return () => clearInterval(intervalId);
+        // return () => clearInterval(intervalId);
     });
 </script>
 

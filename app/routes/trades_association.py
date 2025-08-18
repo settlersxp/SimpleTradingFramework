@@ -19,14 +19,13 @@ def identify_old_trades(signal: Signal) -> list[Trade] | None:
 
     Args:
         signal (Signal): The signal to identify the old trade for.
-    """
+    """/
     old_signals = (
         db.session.query(Signal)
         .filter_by(
             order_type="buy" if signal.order_type == "sell" else "sell",
             ticker=signal.ticker,
             strategy=signal.strategy,
-            contracts=signal.contracts,
         )
         .all()
     )
@@ -50,7 +49,7 @@ def identify_old_trades(signal: Signal) -> list[Trade] | None:
 
 
 @staticmethod
-def cancel_trade(
+def close_trade(
     old_trade: Trade,
     prop_firm: PropFirm,
 ) -> int | None:
@@ -61,7 +60,7 @@ def cancel_trade(
         association: The association object linking the prop firm and trade pair.
         prop_firm (PropFirm): The prop firm associated with the trade.
     """
-    outcome = prop_firm.trading.cancel_trade(old_trade)
+    outcome = prop_firm.trading.close_trade(old_trade)
 
     if outcome.success:
         Trade.query.filter_by(
@@ -96,7 +95,7 @@ def close_all_trade_associations(signal: Signal):
 
     for trade in old_trades:
         logger.info(f"Closing trade {trade.platform_id} for {trade.prop_firm.name}")
-        trade_id = cancel_trade(trade, trade.prop_firm)
+        trade_id = close_trade(trade, trade.prop_firm)
         if trade_id:
             trades.append(trade)
     return trades

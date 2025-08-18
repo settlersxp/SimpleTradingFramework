@@ -129,5 +129,5 @@ class Signal(TimezoneAwareModel):
             order_type=new_signal.order_type,
             ticker=new_signal.ticker,
             position_size=new_signal.position_size,
-        ).first()
+        ).order_by(Signal.id.desc()).first()
         return existing_signal

@@ -3,7 +3,7 @@ from app.models.signal import Signal
 from app.routes.trades_association import (
     add_trade_associations,
     close_all_trade_associations,
-    cancel_trade,
+    close_trade,
 )
 from app.models.prop_firm import PropFirm
 from app.models.trade import Trade
@@ -180,7 +180,7 @@ def replay_trade(trade_id):
 
 
 @bp.route("/close", methods=["POST"])
-def close_trade():
+def close_trade_route():
     """Close a specific trade identified by trade_id query parameter."""
     platform_id = request.get_json().get("platform_id")
     prop_firm_id = request.get_json().get("prop_firm_id")
@@ -197,7 +197,7 @@ def close_trade():
     if not prop_firm:
         return jsonify({"status": "error", "message": "Prop firm not found"}), 404
 
-    trade_id = cancel_trade(trade, prop_firm)
+    trade_id = close_trade(trade, prop_firm)
     return jsonify(
         {
             "status": "success",

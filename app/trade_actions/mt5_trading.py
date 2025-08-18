@@ -67,7 +67,7 @@ class MT5Trading(TradingInterface):
             self.connected = False
             return False
 
-    def cancel_trade(self, trade: Trade) -> ExecuteTradeReturn:
+    def close_trade(self, trade: Trade) -> ExecuteTradeReturn:
         """
         Cancel a trade on MT5
         """
