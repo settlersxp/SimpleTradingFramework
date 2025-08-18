@@ -19,7 +19,7 @@ def identify_old_trades(signal: Signal) -> list[Trade] | None:
 
     Args:
         signal (Signal): The signal to identify the old trade for.
-    """/
+    """
     old_signals = (
         db.session.query(Signal)
         .filter_by(

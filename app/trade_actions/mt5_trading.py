@@ -84,7 +84,7 @@ class MT5Trading(TradingInterface):
                 error_message = (
                     f"Error canceling trade: {trade.ticker} {trade.platform_id}"
                 )
-                print(error_message)
+                print(result)
                 return ExecuteTradeReturn(
                     success=False,
                     message=error_message,
