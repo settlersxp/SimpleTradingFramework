@@ -81,6 +81,8 @@ class MT5Trading(TradingInterface):
             )
 
             if not result:
+                import json
+
                 print("Will retry with SL and TP")
                 # Set take profit and stop loss at 5% of current value for both buy and sell
                 # Note: This code sets SL/TP after closing, which may not be the intended behavior
@@ -89,9 +91,9 @@ class MT5Trading(TradingInterface):
                     # Get symbol information for current price
                     symbol_info = mt5.symbol_info(trade.ticker)
                     tick = mt5.symbol_info_tick(trade.ticker)
-
+                    order_type = existing_trades[0].type
                     # Determine current price based on order type
-                    if trade.order_type.upper() == "BUY":
+                    if order_type == mt5.ORDER_TYPE_BUY:
                         current_price = tick.ask
                         # For buy orders: SL below current price, TP above
                         stop_loss = current_price * 0.95  # 5% below
@@ -121,7 +123,7 @@ class MT5Trading(TradingInterface):
                         "sl": stop_loss,
                         "tp": take_profit,
                     }
-                    mt5.order_send(request)
+                    result = mt5.order_send(request)
                 except Exception as e:
                     logger.error(f"Error sending SL/TP for {trade.ticker}: {e}")
                     # Continue with trade closure even if SL/TP modification fails
