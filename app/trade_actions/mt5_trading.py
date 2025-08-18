@@ -81,6 +81,55 @@ class MT5Trading(TradingInterface):
             )
 
             if not result:
+                print("Will retry with SL and TP")
+                # Set take profit and stop loss at 5% of current value for both buy and sell
+                # Note: This code sets SL/TP after closing, which may not be the intended behavior
+                # Typically SL/TP would be set when opening or modifying existing positions
+                try:
+                    # Get symbol information for current price
+                    symbol_info = mt5.symbol_info(trade.ticker)
+                    tick = mt5.symbol_info_tick(trade.ticker)
+
+                    # Determine current price based on order type
+                    if trade.order_type.upper() == "BUY":
+                        current_price = tick.ask
+                        # For buy orders: SL below current price, TP above
+                        stop_loss = current_price * 0.95  # 5% below
+                        take_profit = current_price * 1.05  # 5% above
+                    else:  # SELL order
+                        current_price = tick.bid
+                        # For sell orders: SL above current price, TP below
+                        stop_loss = current_price * 1.05  # 5% above
+                        take_profit = current_price * 0.95  # 5% below
+                    
+                    # Round to appropriate decimal places based on symbol digits
+                    digits = symbol_info.digits
+                    stop_loss = round(stop_loss, digits)
+                    take_profit = round(take_profit, digits)
+                    
+                    logger.info(
+                        f"Calculated SL/TP for {trade.ticker}: SL={stop_loss}, TP={take_profit}"
+                    )
+                except Exception as sl_tp_error:
+                    logger.error(f"Error calculating SL/TP for {trade.ticker}: {sl_tp_error}")
+                    # Continue with trade closure even if SL/TP calculation fails
+
+                try:
+                    request = {
+                        "action": mt5.TRADE_ACTION_SLTP,
+                        "position": trade.platform_id,
+                        "sl": stop_loss,
+                        "tp": take_profit,
+                    }
+                    mt5.order_send(request)
+                except Exception as e:
+                    logger.error(f"Error sending SL/TP for {trade.ticker}: {e}")
+                    # Continue with trade closure even if SL/TP modification fails
+
+                print(result)
+                print(mt5.last_error())
+
+            if not result:
                 error_message = (
                     f"Error canceling trade: {trade.ticker} {trade.platform_id}"
                 )
