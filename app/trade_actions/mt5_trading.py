@@ -96,13 +96,13 @@ class MT5Trading(TradingInterface):
                     if order_type == mt5.ORDER_TYPE_BUY:
                         current_price = tick.ask
                         # For buy orders: SL below current price, TP above
-                        stop_loss = current_price * 0.95  # 5% below
-                        take_profit = current_price * 1.05  # 5% above
+                        stop_loss = current_price * 0.98  # 2% below
+                        take_profit = current_price * 1.02  # 2% above
                     else:  # SELL order
                         current_price = tick.bid
                         # For sell orders: SL above current price, TP below
-                        stop_loss = current_price * 1.05  # 5% above
-                        take_profit = current_price * 0.95  # 5% below
+                        stop_loss = current_price * 1.02  # 2% above
+                        take_profit = current_price * 0.98  # 2% below
                     
                     # Round to appropriate decimal places based on symbol digits
                     digits = symbol_info.digits
