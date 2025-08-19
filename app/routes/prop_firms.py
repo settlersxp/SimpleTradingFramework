@@ -277,6 +277,23 @@ def delete_trade_pair(prop_firm_id, trade_pair_id):
 @login_required
 @bp.route("/sync", methods=["POST"])
 def sync_prop_firms():
+    return _sync_prop_firms_internal()
+
+
+@bp.route("/sync_public", methods=["POST"])
+def sync_prop_firms_public():
+    """
+    Public endpoint for syncing prop firms without authentication.
+    This endpoint is designed for automated/scheduled calls.
+    """
+    return _sync_prop_firms_internal()
+
+
+def _sync_prop_firms_internal():
+    """
+    Internal function containing the sync logic, shared between 
+    authenticated and public endpoints.
+    """
     try:
         prop_firm_id_req = request.json.get("prop_firm_id") if request.json else None
         results = {}
