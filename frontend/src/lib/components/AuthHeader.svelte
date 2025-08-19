@@ -25,6 +25,10 @@
             name: "Profiles",
             path: "/profiles",
         },
+        {
+            name: "Auto Sync",
+            path: "/auto_sync",
+        },
     ];
 
     let toggleMenu = $state(false);
