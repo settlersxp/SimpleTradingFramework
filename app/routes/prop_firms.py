@@ -294,35 +294,49 @@ def _sync_prop_firms_internal():
     Internal function containing the sync logic, shared between 
     authenticated and public endpoints.
     """
+    if request.content_type == "application/json":
+        data = request.get_json()
+        prop_firm_id_req = data.get("prop_firm_id") if data else None
+    else:
+        prop_firm_id_req = None
+
+    if not prop_firm_id_req:
+        return sync_all_active_prop_firms()
+
     try:
-        prop_firm_id_req = request.json.get("prop_firm_id") if request.json else None
         results = {}
-        if prop_firm_id_req:
-            pf_sync = PropFirm.query.get(prop_firm_id_req)
-            if not pf_sync:
-                return jsonify({"error": "Prop firm not found"}), 404
-            results = pf_sync.trading.sync_prop_firm(pf_sync)
-            msg = "Prop firm synced successfully"
-            return jsonify(
-                {
-                    "prop_firm": results,
-                    "success": True,
-                    "message": msg,
-                }
-            )
-        else:
-            firms_to_sync = PropFirm.query.filter_by(is_active=True).all()
-            for pf in firms_to_sync:
-                results[pf.id] = pf.trading.sync_prop_firm(pf)
-            s_count = sum(1 for r in results.values() if r)
-            t_count = len(results)
-            sync_msg = f"Synced {s_count} out of {t_count} prop firms"
-            return jsonify(
-                {
-                    "success": True,
-                    "message": sync_msg,
-                    "results": results,
-                }
-            )
+        pf_sync = PropFirm.query.get(prop_firm_id_req)
+        if not pf_sync:
+            return jsonify({"error": "Prop firm not found"}), 404
+        results = pf_sync.trading.sync_prop_firm(pf_sync)
+        msg = "Prop firm synced successfully"
+        return jsonify(
+            {
+                "prop_firm": results,
+                "success": True,
+                "message": msg,
+            }
+        )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+def sync_all_active_prop_firms():
+    results = {}
+    firms_to_sync = PropFirm.query.filter_by(is_active=True).all()
+    for pf in firms_to_sync:
+        try:
+            results[pf.id] = pf.trading.sync_prop_firm(pf)
+        except Exception as e:
+            results[pf.id] = {
+                "success": False,
+                "error": str(e)
+            }
+    s_count = sum(1 for r in results.values() if r)
+    t_count = len(results)
+    sync_msg = f"Synced {s_count} out of {t_count} prop firms"
+    return {
+            "success": True,
+            "message": sync_msg,
+            "results": results,
+        }
