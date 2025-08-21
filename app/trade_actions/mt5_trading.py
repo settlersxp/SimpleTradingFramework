@@ -446,6 +446,53 @@ class MT5Trading(TradingInterface):
         account_info = mt5.account_info()
         return account_info is not None
 
+    def _find_best_matching_strategy(self, symbol: str, prop_firm: "PropFirm") -> str:
+        """
+        Find the best matching trading strategy for a symbol based on character similarity.
+        
+        Args:
+            symbol: The trading symbol (e.g., "EURUSD", "BTCUSD")
+            prop_firm: The prop firm to get strategies for (unused, kept for compatibility)
+            
+        Returns:
+            The name of the best matching strategy or "NO_STRATEGY" if no good match found
+        """
+        from app.models.trading_strategy import TradingStrategy
+        
+        # Get all trading strategies from the database
+        all_strategies = TradingStrategy.query.all()
+        
+        if not all_strategies:
+            return "NO_STRATEGY"
+        
+        # Find the strategy with the most matching characters
+        best_match = None
+        best_score = 0
+        
+        symbol_lower = symbol.lower()
+        
+        for strategy in all_strategies:
+            strategy_lower = strategy.name.lower()
+            
+            # Count common characters between symbol and strategy name
+            common_chars = 0
+            for char in symbol_lower:
+                if char in strategy_lower:
+                    common_chars += 1
+            
+            # Calculate a score based on common characters relative to symbol length
+            score = common_chars / len(symbol_lower) if len(symbol_lower) > 0 else 0
+            
+            if score > best_score:
+                best_score = score
+                best_match = strategy.name
+        
+        # Only return a match if we have some reasonable similarity (at least 20% of characters match)
+        if best_score >= 0.2 and best_match:
+            return best_match
+        
+        return "NO_STRATEGY"
+
     def sync_prop_firm(
         self, prop_firm: "PropFirm"
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
@@ -485,8 +532,11 @@ class MT5Trading(TradingInterface):
             ).first()
 
             if not existing_trade:
+                # Find the best matching strategy for this symbol
+                strategy_name = self._find_best_matching_strategy(position.symbol, prop_firm)
+                
                 new_signal = Signal(
-                    strategy="MT5_SYNC",
+                    strategy=strategy_name,
                     order_type="buy" if position.type == mt5.ORDER_TYPE_BUY else "sell",
                     contracts=position.volume,
                     ticker=position.symbol,
