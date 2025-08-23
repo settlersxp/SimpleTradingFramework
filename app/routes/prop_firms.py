@@ -291,7 +291,7 @@ def sync_prop_firms_public():
 
 def _sync_prop_firms_internal():
     """
-    Internal function containing the sync logic, shared between 
+    Internal function containing the sync logic, shared between
     authenticated and public endpoints.
     """
     if request.content_type == "application/json":
@@ -322,21 +322,30 @@ def _sync_prop_firms_internal():
 
 
 def sync_all_active_prop_firms():
+    # for every user prop firm, get the prop_firm_id and update the is_active
+    # attribute of the prop_firm to the is_active attribute of the user_prop_firm
+    user_prop_firms = db.session.query(user_prop_firm).group_by(user_prop_firm.c.prop_firm_id).all()
+    all_prop_firms = PropFirm.query.all()
+    for pf in all_prop_firms:
+        if pf.id in [upf.prop_firm_id for upf in user_prop_firms]:
+            pf.is_active = True
+        else:
+            pf.is_active = False
+        db.session.commit()
+
     results = {}
+
     firms_to_sync = PropFirm.query.filter_by(is_active=True).all()
     for pf in firms_to_sync:
         try:
             results[pf.id] = pf.trading.sync_prop_firm(pf)
         except Exception as e:
-            results[pf.id] = {
-                "success": False,
-                "error": str(e)
-            }
+            results[pf.id] = {"success": False, "error": str(e)}
     s_count = sum(1 for r in results.values() if r)
     t_count = len(results)
     sync_msg = f"Synced {s_count} out of {t_count} prop firms"
     return {
-            "success": True,
-            "message": sync_msg,
-            "results": results,
-        }
+        "success": True,
+        "message": sync_msg,
+        "results": results,
+    }

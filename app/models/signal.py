@@ -1,8 +1,6 @@
 from app import db, TimezoneAwareModel
 from datetime import datetime, timezone
 import json
-import re
-
 
 class Signal(TimezoneAwareModel):
     """
@@ -108,7 +106,7 @@ class Signal(TimezoneAwareModel):
         for trade in matching_trades:
             # if the future drawdown_percentage is greater than 4% skip the trade
             for prop_firm in trade.prop_firms:
-                prop_firm.update_available_balance(trade)
+                prop_firm.update_available_balance_with_trade(trade)
                 if prop_firm.drawdown_percentage > 1.04:
                     continue
 
@@ -124,10 +122,14 @@ class Signal(TimezoneAwareModel):
         Get a signal by its MT string
         """
         new_signal = Signal.from_mt_string(mt_string)
-        existing_signal = Signal.query.filter_by(
-            strategy=new_signal.strategy,
-            order_type=new_signal.order_type,
-            ticker=new_signal.ticker,
-            position_size=new_signal.position_size,
-        ).order_by(Signal.id.desc()).first()
+        existing_signal = (
+            Signal.query.filter_by(
+                strategy=new_signal.strategy,
+                order_type=new_signal.order_type,
+                ticker=new_signal.ticker,
+                position_size=new_signal.position_size,
+            )
+            .order_by(Signal.id.desc())
+            .first()
+        )
         return existing_signal

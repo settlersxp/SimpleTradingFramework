@@ -19,7 +19,7 @@ class Trade(db.Model):
         primary_key=True,
     )
     platform_id = db.Column(
-        db.Integer,
+        db.String(50),
         nullable=True,
     )
     response = db.Column(
@@ -30,7 +30,7 @@ class Trade(db.Model):
     # Define relationships to both sides
     prop_firm = db.relationship(
         "PropFirm",
-        back_populates="trade_associations",
+        back_populates="trades",
     )
     signal = db.relationship(
         "Signal",
@@ -82,7 +82,7 @@ class Trade(db.Model):
                 signal_id=signal.id,
             )
             db.session.add(association)
-            prop_firm.update_available_balance(signal)
+            prop_firm.update_available_balance_with_trade(signal)
 
         db.session.commit()
         return signal, association
@@ -91,7 +91,7 @@ class Trade(db.Model):
     def associate_signal(
         signal: Signal,
         prop_firm: PropFirm,
-        platform_id: int,
+        platform_id: str,
         response: dict,
         ticker: str,
     ):

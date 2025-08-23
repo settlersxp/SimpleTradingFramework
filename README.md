@@ -24,3 +24,13 @@ On Windows (PowerShell):
 
 # install dependencies
 `pip install -r requirements.txt`
+
+
+# testing
+`set FLASK_APP=run.py && set FLASK_END=testing && flask db upgrade`
+
+# dev
+`set FLASK_APP=run.py && set FLASK_END=development && flask db upgrade`
+
+# prod
+`set FLASK_APP=run.py && set FLASK_END=production && flask db upgrade`

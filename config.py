@@ -32,6 +32,6 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(basedir, "test_trades.db")
+    SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(basedir, "test_tradesv2.db")
     TIME_ZONE = "UTC"
     SESSION_COOKIE_SECURE = False  # Allow non-HTTPS in testing

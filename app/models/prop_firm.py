@@ -3,9 +3,12 @@ from datetime import datetime, timezone
 from app.models.signal import Signal
 from app.models.user import user_prop_firm
 import importlib
-from typing import Optional, ClassVar, List, TYPE_CHECKING
+import logging
+from typing import Optional, List, TYPE_CHECKING
+from sqlalchemy.orm import relationship
 from app.trade_actions.trade_interface import TradingInterface
-from sqlalchemy import select
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -32,122 +35,118 @@ class PropFirm(TimezoneAwareModel):
     platform_type = db.Column(db.String(100), nullable=True)
     description = db.Column(db.String(500), nullable=True)
 
-    # One to many relationship with trades in a different association table
-    trade_associations = db.relationship(
+    # Direct relationships for easier access
+    trades = relationship(
         "Trade",
         back_populates="prop_firm",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
     )
 
-    _trading_instance: ClassVar[Optional[TradingInterface]] = None
+    # Many-to-many relationship with users
+    users = relationship(
+        "User",
+        secondary=user_prop_firm,
+        back_populates="prop_firms",
+        lazy="dynamic",
+    )
 
-    def get_trade_associations(self) -> List["Trade"]:
-        return self.trade_associations
+    # Note: _trading_instance is set dynamically in __init__
+    # to avoid SQLAlchemy mapping
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._trading_instance: Optional[TradingInterface] = None
+
+    def get_active_trades(self) -> List["Trade"]:
+        """Get all active trades for this prop firm"""
+        return self.trades.all()
 
     def get_users(self) -> List["User"]:
-        """Manually get all users associated with this prop firm"""
-        from app.models.user import User
+        """Get all users associated with this prop firm"""
+        return list(self.users.all())
 
-        stmt = (
-            select(User)
-            .join(user_prop_firm)
-            .where(user_prop_firm.c.prop_firm_id == self.id)
-        )
-        return db.session.execute(stmt).scalars().all()
-
-    def add_user(self, user):
-        """Manually add a user to this prop firm"""
-        if not self.id:
-            # Save the prop firm first if it doesn't have an ID
-            db.session.add(self)
-            db.session.flush()
-
-        # Check if relationship already exists
-        stmt = select(user_prop_firm).where(
-            user_prop_firm.c.user_id == user.id,
-            user_prop_firm.c.prop_firm_id == self.id,
-        )
-        exists = db.session.execute(stmt).first() is not None
-
-        if not exists:
-            # Create the association
-            db.session.execute(
-                user_prop_firm.insert().values(
-                    user_id=user.id,
-                    prop_firm_id=self.id,
-                    created_at=datetime.now(timezone.utc),
-                )
-            )
+    def add_user(self, user) -> bool:
+        """Add a user to this prop firm"""
+        if user not in self.users:
+            self.users.append(user)
             return True
         return False
 
-    def remove_user(self, user):
-        """Manually remove a user from this prop firm"""
-        result = db.session.execute(
-            user_prop_firm.delete().where(
-                user_prop_firm.c.user_id == user.id,
-                user_prop_firm.c.prop_firm_id == self.id,
-            )
-        )
-        return result.rowcount > 0
+    def remove_user(self, user) -> bool:
+        """Remove a user from this prop firm"""
+        if user in self.users:
+            self.users.remove(user)
+            return True
+        return False
 
     @property
     def trading(self) -> Optional[TradingInterface]:
         """Get or create trading instance based on platform_type"""
+        # Ensure _trading_instance exists (for existing database records)
+        if not hasattr(self, "_trading_instance"):
+            self._trading_instance = None
+
         if not self._trading_instance and self.platform_type:
-            # Convert platform type to module name (e.g., 'MT5' -> 'mt5_trading')
+            # Convert platform type to module name
+            # (e.g., 'MT5' -> 'mt5_trading')
             module_name = f"{self.platform_type.lower()}_trading"
             # Import the module
             module = importlib.import_module(f"app.trade_actions.{module_name}")
-            # Get the class (assumes class name is platform type + 'Trading')
+            # Get the class
+            # (assumes class name is platform type + 'Trading')
             class_name = f"{self.platform_type.upper()}Trading"
             trading_class = getattr(module, class_name)
             # Create instance
-            self._trading_instance = trading_class()
+            self._trading_instance = trading_class(self)
 
             # Try to connect if we have credentials
-            if all([self.username, self.password, self.ip_address]):
-                self._trading_instance.connect(
-                    {
-                        "username": self.username,
-                        "password": self.password,
-                        "server": f"{self.ip_address}",
-                    }
-                )
+            if self.has_complete_credentials():
+                try:
+                    if self._trading_instance:
+                        self._trading_instance.connect()
+                except Exception as e:
+                    logger.error("Failed to connect trading instance: %s", e)
 
-            self._trading_instance.credentials = {
-                "username": self.username,
-                "password": self.password,
-                "server": f"{self.ip_address}",
-            }
+            # Credentials are now handled through the prop_firm reference
 
         return self._trading_instance
 
     def is_connected(self) -> bool:
         # Implement your logic to check if the connection is active
+        # Ensure _trading_instance exists (for existing database records)
+        if not hasattr(self, "_trading_instance"):
+            self._trading_instance = None
+
         return (
             self._trading_instance is not None and self._trading_instance.is_connected()
         )
 
-    # when a prop firm is created, the available balance should be set to the full balance
+    # When a prop firm is created, the available balance should be
+    # set to the full balance
     def set_available_balance_to_full_balance(self):
         self.available_balance = self.full_balance
         self.update_drawdown_percentage()
 
-    # When a trade is added, the prop firm's available balance should be updated
-    def update_available_balance(self, trade: Signal):
+    # When a trade is added, the prop firm's available balance
+    # should be updated
+    def update_available_balance_with_trade(self, trade: Signal):
         self.available_balance -= abs(trade.position_size)
         self.update_drawdown_percentage()
 
-    # When a trade is deleted, the prop firm's available balance should be updated
+    # When a trade is deleted, the prop firm's available balance
+    # should be updated
     def update_available_balance_on_delete(self, trade: Signal):
         self.available_balance += abs(trade.position_size)
         self.update_drawdown_percentage()
 
-    # every time the prop firm's available balance is updated, the downdraft percentage should be updated
+    # Every time the prop firm's available balance is updated,
+    # the drawdown percentage should be updated
     def update_drawdown_percentage(self):
         self.drawdown_percentage = self.full_balance / self.available_balance
 
-    # When the full balance is update the downdraft percentage should be updated
+    # When the full balance is updated the drawdown percentage
+    # should be updated
     def update_drawdown_percentage_on_full_balance_update(self, full_balance: float):
         self.full_balance = full_balance
         self.update_drawdown_percentage()
@@ -155,6 +154,18 @@ class PropFirm(TimezoneAwareModel):
     def update_available_balance(self, balance: float):
         self.available_balance = balance
         self.update_drawdown_percentage()
+
+    def has_complete_credentials(self) -> bool:
+        """Check if all required credentials are present"""
+        return all([self.username, self.password, self.ip_address])
+
+    def get_total_position_size(self) -> float:
+        """Calculate total position size across all trades"""
+        return sum(trade.signal.position_size for trade in self.trades if trade.signal)
+
+    def get_trade_count(self) -> int:
+        """Get count of active trades"""
+        return self.trades.count()
 
     def save(self):
         db.session.add(self)
@@ -164,8 +175,10 @@ class PropFirm(TimezoneAwareModel):
         return {
             "id": self.id,
             "name": self.name,
-            "created_at": self.get_datetime_in_timezone(self.created_at).strftime(
-                "%Y-%m-%d %H:%M:%S %z"
+            "created_at": (
+                self.created_at.strftime("%Y-%m-%d %H:%M:%S %z")
+                if self.created_at
+                else None
             ),
             "full_balance": self.full_balance,
             "available_balance": self.available_balance,

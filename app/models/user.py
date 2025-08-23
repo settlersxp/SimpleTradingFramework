@@ -1,6 +1,7 @@
 from app import db
 from datetime import datetime, timezone
 from sqlalchemy import select
+from sqlalchemy.orm import relationship
 from typing import List, TYPE_CHECKING
 import uuid
 
@@ -49,6 +50,11 @@ class User(db.Model):
     )
     token = db.Column(db.String(120), nullable=True)
 
+    # Many-to-many relationship with prop firms
+    prop_firms = relationship(
+        "PropFirm", secondary=user_prop_firm, back_populates="users", lazy="dynamic"
+    )
+
     def __repr__(self):
         return f"<User {self.email}>"
 
@@ -60,55 +66,26 @@ class User(db.Model):
         This means the association exists.
         Access global status via 'prop_firm.is_active'.
         """
-        from app.models.prop_firm import PropFirm
-
-        stmt = (
-            select(PropFirm)
-            .join(user_prop_firm)
-            .where(user_prop_firm.c.user_id == self.id)
-        )
-        prop_firms_list = db.session.execute(stmt).scalars().all()
+        prop_firms_list = list(self.prop_firms.all())
 
         for pf_object in prop_firms_list:
             pf_object.active_for_user = True  # Dynamically add attribute
 
         return prop_firms_list
 
-    def add_prop_firm(self, prop_firm):
-        """Manually add a prop firm to this user"""
-        if not self.id:
-            # Save the user first if it doesn't have an ID
-            db.session.add(self)
-            db.session.flush()
-
-        # Check if relationship already exists
-        stmt = select(user_prop_firm).where(
-            user_prop_firm.c.user_id == self.id,
-            user_prop_firm.c.prop_firm_id == prop_firm.id,
-        )
-        exists = db.session.execute(stmt).first() is not None
-
-        if not exists:
-            # Create the association
-            db.session.execute(
-                user_prop_firm.insert().values(
-                    user_id=self.id,
-                    prop_firm_id=prop_firm.id,
-                    created_at=datetime.now(timezone.utc),
-                )
-            )
+    def add_prop_firm(self, prop_firm) -> bool:
+        """Add a prop firm to this user"""
+        if prop_firm not in self.prop_firms:
+            self.prop_firms.append(prop_firm)
             return True
         return False
 
-    def remove_prop_firm(self, prop_firm):
-        """Manually remove a prop firm from this user"""
-        result = db.session.execute(
-            user_prop_firm.delete().where(
-                user_prop_firm.c.user_id == self.id,
-                user_prop_firm.c.prop_firm_id == prop_firm.id,
-            )
-        )
-        return result.rowcount > 0
+    def remove_prop_firm(self, prop_firm) -> bool:
+        """Remove a prop firm from this user"""
+        if prop_firm in self.prop_firms:
+            self.prop_firms.remove(prop_firm)
+            return True
+        return False
 
     def get_trading_strategies(self) -> List["TradingStrategy"]:
         """Get all trading strategies associated with this user"""
